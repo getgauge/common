@@ -18,12 +18,12 @@ const (
 	envDirectoryName        = "env"
 )
 
-func getSearchPathForSharedFiles() []string {
+func GetSearchPathForSharedFiles() []string {
 	return []string{"/usr/local/share/twist2", "/usr/share/twist2"}
 }
 
-func getLanguageJSONFilePath(language string) (string, error) {
-	searchPaths := getSearchPathForSharedFiles()
+func GetLanguageJSONFilePath(language string) (string, error) {
+	searchPaths := GetSearchPathForSharedFiles()
 	for _, p := range searchPaths {
 		languageJson := filepath.Join(p, "languages", fmt.Sprintf("%s.json", language))
 		_, err := os.Stat(languageJson)
@@ -35,11 +35,11 @@ func getLanguageJSONFilePath(language string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Failed to find the implementation for: %s", language))
 }
 
-func getSkeletonFilePath(filename string) (string, error) {
-	searchPaths := getSearchPathForSharedFiles()
+func GetSkeletonFilePath(filename string) (string, error) {
+	searchPaths := GetSearchPathForSharedFiles()
 	for _, p := range searchPaths {
 		skelFile := filepath.Join(p, "skel", filename)
-		if fileExists(skelFile) {
+		if FileExists(skelFile) {
 			return skelFile, nil
 		}
 	}
@@ -47,12 +47,12 @@ func getSkeletonFilePath(filename string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Failed to find the skeleton file: %s", filename))
 }
 
-func isASupportedLanguage(language string) bool {
-	_, err := getLanguageJSONFilePath(language)
+func IsASupportedLanguage(language string) bool {
+	_, err := GetLanguageJSONFilePath(language)
 	return err == nil
 }
 
-func readFileContents(file string) string {
+func ReadFileContents(file string) string {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
 		fmt.Printf("Failed to read: %s. %s\n", file, err.Error())
@@ -62,7 +62,7 @@ func readFileContents(file string) string {
 	return string(bytes)
 }
 
-func fileExists(path string) bool {
+func FileExists(path string) bool {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true
@@ -73,7 +73,7 @@ func fileExists(path string) bool {
 	return false
 }
 
-func dirExists(dirPath string) bool {
+func DirExists(dirPath string) bool {
 	stat, err := os.Stat(dirPath)
 	if err == nil && stat.IsDir() {
 		return true
@@ -82,12 +82,12 @@ func dirExists(dirPath string) bool {
 	return false
 }
 
-func getUniqueId() int64 {
+func GetUniqueId() int64 {
 	return time.Now().UnixNano()
 }
 
-func copyFile(src, dest string) error {
-	if !fileExists(src) {
+func CopyFile(src, dest string) error {
+	if !FileExists(src) {
 		return errors.New(fmt.Sprintf("%s doesn't exist", src))
 	}
 
@@ -106,7 +106,7 @@ func copyFile(src, dest string) error {
 
 // A wrapper around os.SetEnv
 // This handles duplicate env variable assignments and fails
-func setEnvVariable(key, value string) error {
+func SetEnvVariable(key, value string) error {
 	existingValue := os.Getenv(key)
 	if existingValue == "" {
 		if strings.TrimSpace(value) == "" {
