@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	newDirectoryPermissions = 0755
-	newFilePermissions      = 0644
-	defaultEnvJSONFileName  = "default.json"
-	envDirectoryName        = "env"
+	NewDirectoryPermissions = 0755
+	NewFilePermissions      = 0644
+	DefaultEnvJSONFileName  = "default.json"
+	EnvDirectoryName        = "env"
 )
 
 func GetSearchPathForSharedFiles() []string {
@@ -96,7 +96,7 @@ func CopyFile(src, dest string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(dest, b, newFilePermissions)
+	err = ioutil.WriteFile(dest, b, NewFilePermissions)
 	if err != nil {
 		return err
 	}
