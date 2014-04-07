@@ -6,17 +6,48 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 )
 
 const (
+	ManifestFile            = "manifest.json"
 	NewDirectoryPermissions = 0755
 	NewFilePermissions      = 0644
 	DefaultEnvJSONFileName  = "default.json"
 	EnvDirectoryName        = "env"
 )
+
+// A project root is where a manifest.json files exists
+// this routine keeps going upwards searching for manifest.json
+func GetProjectRoot() string {
+	pwd, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
+		os.Exit(2)
+	}
+
+	manifestExists := func(dir string) bool {
+		return FileExists(path.Join(dir, ManifestFile))
+	}
+
+	dir := pwd
+	for {
+		if manifestExists(dir) {
+			return dir
+		}
+
+		if dir == filepath.Clean(fmt.Sprintf("%c", os.PathSeparator)) || dir == "" {
+			return ""
+		}
+
+		dir = strings.Replace(dir, filepath.Base(dir), "", -1)
+	}
+
+	return ""
+}
 
 func GetSearchPathForSharedFiles() []string {
 	return []string{"/usr/local/share/twist2", "/usr/share/twist2"}
