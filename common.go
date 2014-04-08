@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -165,4 +166,17 @@ func SetEnvVariable(key, value string) error {
 	}
 
 	return nil
+}
+
+func GetExecutableCommand(command string) *exec.Cmd {
+	var cmd *exec.Cmd
+	cmdParts := strings.Split(command, " ")
+	if len(cmdParts) == 0 {
+		panic(errors.New("Invalid executable command"))
+	} else if len(cmdParts) > 1 {
+		cmd = exec.Command(cmdParts[0], cmdParts[1:]...)
+	} else {
+		cmd = exec.Command(cmdParts[0])
+	}
+	return cmd
 }
