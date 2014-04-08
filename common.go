@@ -14,6 +14,7 @@ import (
 
 const (
 	ManifestFile            = "manifest.json"
+	PluginJsonFile          = "plugin.json"
 	NewDirectoryPermissions = 0755
 	NewFilePermissions      = 0644
 	DefaultEnvJSONFileName  = "default.json"
@@ -76,6 +77,18 @@ func GetSkeletonFilePath(filename string) (string, error) {
 	}
 
 	return "", errors.New(fmt.Sprintf("Failed to find the skeleton file: %s", filename))
+}
+
+func GetPluginsPath() (string, error) {
+	searchPaths := GetSearchPathForSharedFiles()
+	for _, p := range searchPaths {
+		pluginsDir := filepath.Join(p, "plugins")
+		if DirExists(pluginsDir) {
+			return pluginsDir, nil
+		}
+	}
+
+	return "", errors.New("Failed to find the plugins directory")
 }
 
 func IsASupportedLanguage(language string) bool {
