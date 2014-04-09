@@ -4,7 +4,9 @@ package common
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -179,4 +181,51 @@ func GetExecutableCommand(command string) *exec.Cmd {
 		cmd = exec.Command(cmdParts[0])
 	}
 	return cmd
+}
+
+func downloadUsingWget(url, targetDir string) error {
+	wgetCommand := fmt.Sprintf("wget %s --directory-prefix %s", url, targetDir)
+	cmd := GetExecutableCommand(wgetCommand)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func downloadUsingCurl(url, targetDir string) error {
+	curlCommand := fmt.Sprintf("curl -o %s %s", filepath.Join(targetDir, filepath.Base(url)), url)
+	cmd := GetExecutableCommand(curlCommand)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func downloadUsingGo(url, targetDir string) error {
+	out, err := os.Create(filepath.Join(targetDir, filepath.Base(url)))
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+func Download(url, targetDir string) error {
+	if !DirExists(targetDir) {
+		return errors.New(fmt.Sprintf("%s doesn't exists", targetDir))
+	}
+
+	if _, err := exec.LookPath("wget"); err == nil {
+		return downloadUsingWget(url, targetDir)
+	}
+
+	if _, err := exec.LookPath("curl"); err == nil {
+		return downloadUsingCurl(url, targetDir)
+	}
+
+	return downloadUsingGo(url, targetDir)
 }
