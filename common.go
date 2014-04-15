@@ -22,13 +22,11 @@ const (
 	NewFilePermissions      = 0644
 	DefaultEnvJSONFileName  = "default.json"
 	EnvDirectoryName        = "env"
-	ConceptsDirectoryName   = "concepts"
-	ConceptFileExtension    = ".cpt"
 )
 
 // A project root is where a manifest.json files exists
 // this routine keeps going upwards searching for manifest.json
-func GetProjectRoot() (string, error) {
+func GetProjectRoot() string {
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
@@ -42,42 +40,18 @@ func GetProjectRoot() (string, error) {
 	dir := pwd
 	for {
 		if manifestExists(dir) {
-			return dir, nil
+			return dir
 		}
+
 		if dir == filepath.Clean(fmt.Sprintf("%c", os.PathSeparator)) || dir == "" {
-			return "", errors.New("Failed to find project directory, run the command inside the project")
+			return ""
 		}
-		dir = filepath.Clean(fmt.Sprintf("%s%c..", dir, os.PathSeparator))
+
+		dir = strings.Replace(dir, filepath.Base(dir), "", -1)
 	}
 
-	return "", errors.New("Failed to find project directory, run the command inside the project")
+	return ""
 }
-
-func GetDirInProject(dirName string) (string, error) {
-	projectRoot, err := GetProjectRoot()
-	if (err != nil ) {
-		return "", err
-	}
-
-	requiredDir := path.Join(projectRoot, dirName)
-	if (!DirExists(requiredDir)) {
-		return "", errors.New(fmt.Sprintf("Could not find %s directory. %s does not exist", dirName, requiredDir))
-	}
-
-	return requiredDir, nil
-}
-
-func FindFilesInDir(dirPath string, isValidFile func(path string) (bool)) ([]string) {
-	files := make([]string, 0)
-	filepath.Walk(dirPath, func(path string, f os.FileInfo, err error) error {
-			if err == nil && !f.IsDir() && isValidFile(path) {
-				files = append(files, path)
-			}
-			return err
-		})
-	return files
-}
-
 
 func GetSearchPathForSharedFiles() []string {
 	return []string{"/usr/local/share/twist2", "/usr/share/twist2"}
