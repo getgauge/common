@@ -20,7 +20,7 @@ const (
 	PluginJsonFile          = "plugin.json"
 	NewDirectoryPermissions = 0755
 	NewFilePermissions      = 0644
-	DefaultEnvJSONFileName  = "default.json"
+	DefaultEnvFileName      = "default.properties"
 	EnvDirectoryName        = "env"
 )
 
@@ -152,21 +152,14 @@ func CopyFile(src, dest string) error {
 }
 
 // A wrapper around os.SetEnv
-// This handles duplicate env variable assignments and fails
 func SetEnvVariable(key, value string) error {
-	existingValue := os.Getenv(key)
-	if existingValue == "" {
-		if strings.TrimSpace(value) == "" {
-			return nil
-		}
-		err := os.Setenv(key, value)
-		if err != nil {
-			return errors.New(fmt.Sprintf("Failed to set: %s = %s. %s", key, value, err.Error()))
-		}
-	} else {
-		return errors.New(fmt.Sprintf("Failed to set: %s = %s. It is already assigned a value '%s'. Multiple assignments to same variable is not allowed", key, value, existingValue))
+	if strings.TrimSpace(value) == "" {
+		return nil
 	}
-
+	err := os.Setenv(key, value)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Failed to set: %s = %s. %s", key, value, err.Error()))
+	}
 	return nil
 }
 
