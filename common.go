@@ -16,12 +16,15 @@ import (
 )
 
 const (
-	ManifestFile            = "manifest.json"
-	PluginJsonFile          = "plugin.json"
-	NewDirectoryPermissions = 0755
-	NewFilePermissions      = 0644
-	DefaultEnvFileName      = "default.properties"
-	EnvDirectoryName        = "env"
+	ManifestFile             = "manifest.json"
+	PluginJsonFile           = "plugin.json"
+	NewDirectoryPermissions  = 0755
+	NewFilePermissions       = 0644
+	DefaultEnvFileName       = "default.properties"
+	EnvDirectoryName         = "env"
+	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
+	ExecutableName           = "twist2"
+	ProductName              = "twist2"
 )
 
 // A project root is where a manifest.json files exists
@@ -53,45 +56,63 @@ func GetProjectRoot() string {
 	return ""
 }
 
-func GetSearchPathForSharedFiles() []string {
-	return []string{"/usr/local/share/twist2", "/usr/share/twist2"}
+// gets the installation directory prefix
+// /usr or /usr/local or gauge_root
+func GetInstallationPrefix() string {
+	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
+	if gaugeRoot != "" {
+		return gaugeRoot
+	}
+
+	possibleInstallationPrefixes := []string{"/usr/local", "/usr"}
+	for _, p := range possibleInstallationPrefixes {
+		if FileExists(path.Join(p, "bin", ExecutableName)) {
+			return p
+		}
+	}
+
+	panic(errors.New("Can't find installation files"))
+}
+
+func GetSearchPathForSharedFiles() string {
+	installationPrefix := GetInstallationPrefix()
+	return path.Join(installationPrefix, "share", ProductName)
 }
 
 func GetLanguageJSONFilePath(language string) (string, error) {
-	searchPaths := GetSearchPathForSharedFiles()
-	for _, p := range searchPaths {
-		languageJson := filepath.Join(p, "languages", fmt.Sprintf("%s.json", language))
-		_, err := os.Stat(languageJson)
-		if err == nil {
-			return languageJson, nil
-		}
+	searchPath := GetSearchPathForSharedFiles()
+	languageJson := filepath.Join(searchPath, "languages", fmt.Sprintf("%s.json", language))
+	_, err := os.Stat(languageJson)
+	if err == nil {
+		return languageJson, nil
 	}
 
 	return "", errors.New(fmt.Sprintf("Failed to find the implementation for: %s", language))
 }
 
 func GetSkeletonFilePath(filename string) (string, error) {
-	searchPaths := GetSearchPathForSharedFiles()
-	for _, p := range searchPaths {
-		skelFile := filepath.Join(p, "skel", filename)
-		if FileExists(skelFile) {
-			return skelFile, nil
-		}
+	searchPath := GetSearchPathForSharedFiles()
+	skelFile := filepath.Join(searchPath, "skel", filename)
+	if FileExists(skelFile) {
+		return skelFile, nil
 	}
 
 	return "", errors.New(fmt.Sprintf("Failed to find the skeleton file: %s", filename))
 }
 
 func GetPluginsPath() (string, error) {
-	searchPaths := GetSearchPathForSharedFiles()
-	for _, p := range searchPaths {
-		pluginsDir := filepath.Join(p, "plugins")
-		if DirExists(pluginsDir) {
-			return pluginsDir, nil
-		}
+	searchPath := GetSearchPathForSharedFiles()
+	pluginsDir := filepath.Join(searchPath, "plugins")
+	if DirExists(pluginsDir) {
+		return pluginsDir, nil
 	}
 
 	return "", errors.New("Failed to find the plugins directory")
+}
+
+func GetLibsPath() string {
+	prefix := GetInstallationPrefix()
+	return path.Join(prefix, "lib", ProductName)
 }
 
 func IsASupportedLanguage(language string) bool {
