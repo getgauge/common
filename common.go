@@ -25,11 +25,13 @@ const (
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
 	ExecutableName           = "twist2"
 	ProductName              = "twist2"
+	ConceptsDirectoryName   = "concepts"
+	ConceptFileExtension    = ".cpt"
 )
 
 // A project root is where a manifest.json files exists
 // this routine keeps going upwards searching for manifest.json
-func GetProjectRoot() string {
+func GetProjectRoot() (string, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
@@ -43,17 +45,40 @@ func GetProjectRoot() string {
 	dir := pwd
 	for {
 		if manifestExists(dir) {
-			return dir
+			return dir, nil
 		}
-
 		if dir == filepath.Clean(fmt.Sprintf("%c", os.PathSeparator)) || dir == "" {
-			return ""
+			return "", errors.New("Failed to find project directory, run the command inside the project")
 		}
-
-		dir = strings.Replace(dir, filepath.Base(dir), "", -1)
+		dir = filepath.Clean(fmt.Sprintf("%s%c..", dir, os.PathSeparator))
 	}
 
-	return ""
+	return "", errors.New("Failed to find project directory, run the command inside the project")
+}
+
+func GetDirInProject(dirName string) (string, error) {
+	projectRoot, err := GetProjectRoot()
+	if (err != nil ) {
+		return "", err
+	}
+
+	requiredDir := path.Join(projectRoot, dirName)
+	if (!DirExists(requiredDir)) {
+		return "", errors.New(fmt.Sprintf("Could not find %s directory. %s does not exist", dirName, requiredDir))
+	}
+
+	return requiredDir, nil
+}
+
+func FindFilesInDir(dirPath string, isValidFile func(path string) (bool)) ([]string) {
+	files := make([]string, 0)
+	filepath.Walk(dirPath, func(path string, f os.FileInfo, err error) error {
+			if err == nil && !f.IsDir() && isValidFile(path) {
+				files = append(files, path)
+			}
+			return err
+		})
+	return files
 }
 
 // gets the installation directory prefix
