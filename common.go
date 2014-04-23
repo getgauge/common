@@ -41,7 +41,6 @@ func GetProjectRoot() (string, error) {
 	manifestExists := func(dir string) bool {
 		return FileExists(path.Join(dir, ManifestFile))
 	}
-
 	dir := pwd
 	for {
 		if manifestExists(dir) {
@@ -160,10 +159,7 @@ func FileExists(path string) bool {
 	if err == nil {
 		return true
 	}
-	if os.IsNotExist(err) {
-		return false
-	}
-	return false
+	return !os.IsNotExist(err)
 }
 
 func DirExists(dirPath string) bool {
