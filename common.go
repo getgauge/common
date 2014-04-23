@@ -25,8 +25,8 @@ const (
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
 	ExecutableName           = "twist2"
 	ProductName              = "twist2"
-	ConceptsDirectoryName   = "concepts"
-	ConceptFileExtension    = ".cpt"
+	SpecsDirectoryName       = "specs"
+	ConceptFileExtension     = ".cpt"
 )
 
 // A project root is where a manifest.json files exists
