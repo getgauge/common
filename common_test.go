@@ -72,7 +72,7 @@ func (s *MySuite) TestGetProjectRoot(c *C) {
 
 	root, err := GetProjectRoot()
 
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
 }
 
@@ -82,7 +82,7 @@ func (s *MySuite) TestGetProjectRootFromNestedDir(c *C) {
 
 	root, err := GetProjectRoot()
 
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
 }
 
@@ -98,7 +98,7 @@ func (s *MySuite) TestGetDirInProject(c *C) {
 
 	concepts, err := GetDirInProject("concepts")
 
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(concepts, Equals, filepath.Join(s.testDir, dummyProject, "concepts"))
 }
 
@@ -107,7 +107,7 @@ func (s *MySuite) TestGetDirInProjectFromNestedDir(c *C) {
 
 	concepts, err := GetDirInProject("concepts")
 
-	c.Assert(err, Equals, nil)
+	c.Assert(err, IsNil)
 	c.Assert(concepts, Equals, filepath.Join(s.testDir, dummyProject, "concepts"))
 }
 
