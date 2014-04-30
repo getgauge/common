@@ -57,26 +57,26 @@ func GetProjectRoot() (string, error) {
 
 func GetDirInProject(dirName string) (string, error) {
 	projectRoot, err := GetProjectRoot()
-	if (err != nil ) {
+	if err != nil {
 		return "", err
 	}
 
 	requiredDir := path.Join(projectRoot, dirName)
-	if (!DirExists(requiredDir)) {
+	if !DirExists(requiredDir) {
 		return "", errors.New(fmt.Sprintf("Could not find %s directory. %s does not exist", dirName, requiredDir))
 	}
 
 	return requiredDir, nil
 }
 
-func FindFilesInDir(dirPath string, isValidFile func(path string) (bool)) ([]string) {
+func FindFilesInDir(dirPath string, isValidFile func(path string) bool) []string {
 	files := make([]string, 0)
 	filepath.Walk(dirPath, func(path string, f os.FileInfo, err error) error {
-			if err == nil && !f.IsDir() && isValidFile(path) {
-				files = append(files, path)
-			}
-			return err
-		})
+		if err == nil && !f.IsDir() && isValidFile(path) {
+			files = append(files, path)
+		}
+		return err
+	})
 	return files
 }
 
@@ -219,7 +219,7 @@ func GetExecutableCommand(command string) *exec.Cmd {
 }
 
 func downloadUsingWget(url, targetDir string) error {
-	wgetCommand := fmt.Sprintf("wget %s --directory-prefix %s", url, targetDir)
+	wgetCommand := fmt.Sprintf("wget %s -O %s", url, filepath.Join(targetDir, filepath.Base(url)))
 	cmd := GetExecutableCommand(wgetCommand)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
