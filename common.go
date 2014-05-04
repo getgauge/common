@@ -27,6 +27,8 @@ const (
 	ProductName              = "twist2"
 	SpecsDirectoryName       = "specs"
 	ConceptFileExtension     = ".cpt"
+	GaugePortEnvName         = "GAUGE_PORT"          // user specifies this to use a specific port
+	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT" // this is the port which runner should use
 )
 
 // A project root is where a manifest.json files exists
