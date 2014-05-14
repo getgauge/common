@@ -1,18 +1,18 @@
 package common
 
 import (
+	"fmt"
 	. "launchpad.net/gocheck"
-	"testing"
 	"os"
 	"path/filepath"
-	"fmt"
+	"testing"
 )
 
 const dummyProject = "dummy_proj"
 
 func Test(t *testing.T) { TestingT(t) }
 
-type MySuite struct{
+type MySuite struct {
 	testDir string
 }
 
@@ -60,7 +60,7 @@ func createDummyProject(project string) {
 
 	for _, filePath := range filesToCreate {
 		_, err := os.Create(filePath)
-		if (err != nil) {
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -121,15 +121,15 @@ func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
 }
 
 func (s *MySuite) TestFindFilesInDir(c *C) {
-	foundSpecFiles := FindFilesInDir(filepath.Join(dummyProject, "specs"), func (filePath string)(bool) {
-				return filepath.Ext(filePath) == ".spec"
-		})
+	foundSpecFiles := FindFilesInDir(filepath.Join(dummyProject, "specs"), func(filePath string) bool {
+		return filepath.Ext(filePath) == ".spec"
+	})
 
 	c.Assert(len(foundSpecFiles), Equals, 4)
 
-	foundConceptFiles := FindFilesInDir(filepath.Join(dummyProject, "concepts"), func (filePath string)(bool) {
-			return filepath.Ext(filePath) == ".cpt"
-		})
+	foundConceptFiles := FindFilesInDir(filepath.Join(dummyProject, "concepts"), func(filePath string) bool {
+		return filepath.Ext(filePath) == ".cpt"
+	})
 
 	c.Assert(len(foundConceptFiles), Equals, 3)
 }

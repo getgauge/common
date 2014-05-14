@@ -146,14 +146,13 @@ func IsASupportedLanguage(language string) bool {
 	return err == nil
 }
 
-func ReadFileContents(file string) string {
+func ReadFileContents(file string) (string, error) {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
-		fmt.Printf("Failed to read: %s. %s\n", file, err.Error())
-		os.Exit(1)
+		return "", err
 	}
 
-	return string(bytes)
+	return string(bytes), nil
 }
 
 func FileExists(path string) bool {
