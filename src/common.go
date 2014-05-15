@@ -63,7 +63,7 @@ func GetDirInProject(dirName string) (string, error) {
 		return "", err
 	}
 
-	requiredDir := path.Join(projectRoot, dirName)
+	requiredDir := filepath.Join(projectRoot, dirName)
 	if !DirExists(requiredDir) {
 		return "", errors.New(fmt.Sprintf("Could not find %s directory. %s does not exist", dirName, requiredDir))
 	}
@@ -102,7 +102,7 @@ func GetInstallationPrefix() string {
 
 func GetSearchPathForSharedFiles() string {
 	installationPrefix := GetInstallationPrefix()
-	return path.Join(installationPrefix, "share", ProductName)
+	return filepath.Join(installationPrefix, "share", ProductName)
 }
 
 func GetLanguageJSONFilePath(language string) (string, error) {
@@ -138,7 +138,7 @@ func GetPluginsPath() (string, error) {
 
 func GetLibsPath() string {
 	prefix := GetInstallationPrefix()
-	return path.Join(prefix, "lib", ProductName)
+	return filepath.Join(prefix, "lib", ProductName)
 }
 
 func IsASupportedLanguage(language string) bool {

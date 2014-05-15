@@ -5,7 +5,6 @@ import (
 	. "launchpad.net/gocheck"
 	"os"
 	"path/filepath"
-	"path"
 	"testing"
 )
 
@@ -100,7 +99,7 @@ func (s *MySuite) TestGetDirInProject(c *C) {
 	concepts, err := GetDirInProject("concepts")
 
 	c.Assert(err, IsNil)
-	c.Assert(concepts, Equals, path.Join(s.testDir, dummyProject, "concepts"))
+	c.Assert(concepts, Equals, filepath.Join(s.testDir, dummyProject, "concepts"))
 }
 
 func (s *MySuite) TestGetDirInProjectFromNestedDir(c *C) {
@@ -109,7 +108,7 @@ func (s *MySuite) TestGetDirInProjectFromNestedDir(c *C) {
 	concepts, err := GetDirInProject("concepts")
 
 	c.Assert(err, IsNil)
-	c.Assert(concepts, Equals, path.Join(s.testDir, dummyProject, "concepts"))
+	c.Assert(concepts, Equals, filepath.Join(s.testDir, dummyProject, "concepts"))
 }
 
 func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
@@ -118,7 +117,7 @@ func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
 	_, err := GetDirInProject("invalid")
 
 	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, fmt.Sprintf("Could not find invalid directory. %s does not exist", path.Join(s.testDir, dummyProject, "invalid")))
+	c.Assert(err.Error(), Equals, fmt.Sprintf("Could not find invalid directory. %s does not exist", filepath.Join(s.testDir, dummyProject, "invalid")))
 }
 
 func (s *MySuite) TestFindFilesInDir(c *C) {
