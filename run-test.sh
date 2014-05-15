@@ -1,1 +1,1 @@
-export GOPATH=`pwd` && cd src && go test
+export GOPATH=`pwd` && go test

@@ -44,6 +44,7 @@ func GetProjectRoot() (string, error) {
 		return FileExists(path.Join(dir, ManifestFile))
 	}
 	dir := pwd
+
 	for {
 		if manifestExists(dir) {
 			return dir, nil
@@ -51,7 +52,12 @@ func GetProjectRoot() (string, error) {
 		if dir == filepath.Clean(fmt.Sprintf("%c", os.PathSeparator)) || dir == "" {
 			return "", errors.New("Failed to find project directory, run the command inside the project")
 		}
+		oldDir := dir
 		dir = filepath.Clean(fmt.Sprintf("%s%c..", dir, os.PathSeparator))
+		if dir == oldDir {
+			return "", errors.New("Failed to find project directory, run the command inside the project")
+		}
+
 	}
 
 	return "", errors.New("Failed to find project directory, run the command inside the project")
