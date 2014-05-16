@@ -23,8 +23,8 @@ const (
 	DefaultEnvFileName       = "default.properties"
 	EnvDirectoryName         = "env"
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
-	ExecutableName           = "twist2"
-	ProductName              = "twist2"
+	ExecutableName           = "gauge"
+	ProductName              = "gauge"
 	SpecsDirectoryName       = "specs"
 	ConceptFileExtension     = ".cpt"
 	GaugePortEnvName         = "GAUGE_PORT"          // user specifies this to use a specific port
