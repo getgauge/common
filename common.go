@@ -271,3 +271,22 @@ func Download(url, targetDir string) error {
 
 	return downloadUsingGo(url, targetDir)
 }
+
+func SaveFile(filePath, contents string, takeBackup bool) error {
+	backupFile := ""
+	if takeBackup {
+		tmpDir := os.TempDir()
+		fileName := fmt.Sprintf("%s_%v", filepath.Base(filePath), GetUniqueId())
+		backupFile = filepath.Join(tmpDir, fileName)
+		err := CopyFile(filePath, backupFile)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Failed to make backup for '%s': %s", filePath, err.Error()))
+		}
+	}
+	err := ioutil.WriteFile(filePath, []byte(contents), NewFilePermissions)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Failed to write to '%s': %s", filePath, err.Error()))
+	}
+
+	return nil
+}
