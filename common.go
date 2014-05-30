@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -289,4 +290,9 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 	}
 
 	return nil
+}
+
+func TrimTrailingSpace(str string) string {
+	var r = regexp.MustCompile(`[ \t]+$`)
+	return r.ReplaceAllString(str, "")
 }
