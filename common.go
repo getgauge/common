@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"log"
 )
 
 const (
@@ -183,6 +184,78 @@ func DirExists(dirPath string) bool {
 
 	return false
 }
+
+// Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
+func MirrorDir(src, dst string) error {
+	log.Printf("Copying '%s' -> '%s'\n", src, dst)
+	err := filepath.Walk(src, func(path string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if fi.IsDir() {
+			return nil
+		}
+		suffix, err := filepath.Rel(src, path)
+		if err != nil {
+			return fmt.Errorf("Failed to find Rel(%q, %q): %v", src, path, err)
+		}
+		return mirrorFile(path, filepath.Join(dst, suffix))
+	})
+	return err
+}
+
+// Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
+func MirrorFile(src, dst string) error {
+	sfi, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if sfi.Mode()&os.ModeType != 0 {
+		log.Fatalf("mirrorFile can't deal with non-regular file %s", src)
+	}
+	dfi, err := os.Stat(dst)
+	if err == nil &&
+		isExecMode(sfi.Mode()) == isExecMode(dfi.Mode()) &&
+			(dfi.Mode()&os.ModeType == 0) &&
+		dfi.Size() == sfi.Size() &&
+		dfi.ModTime().Unix() == sfi.ModTime().Unix() {
+		// Seems to not be modified.
+		return nil
+	}
+
+	dstDir := filepath.Dir(dst)
+	if err := os.MkdirAll(dstDir, 0755); err != nil {
+		return err
+	}
+
+	df, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	sf, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sf.Close()
+
+	n, err := io.Copy(df, sf)
+	if err == nil && n != sfi.Size() {
+		err = fmt.Errorf("copied wrong size for %s -> %s: copied %d; want %d", src, dst, n, sfi.Size())
+	}
+	cerr := df.Close()
+	if err == nil {
+		err = cerr
+	}
+	if err == nil {
+		err = os.Chmod(dst, sfi.Mode())
+	}
+	if err == nil {
+		err = os.Chtimes(dst, sfi.ModTime(), sfi.ModTime())
+	}
+	return err
+}
+
+
 
 func GetUniqueId() int64 {
 	return time.Now().UnixNano()
