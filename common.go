@@ -199,7 +199,7 @@ func MirrorDir(src, dst string) error {
 		if err != nil {
 			return fmt.Errorf("Failed to find Rel(%q, %q): %v", src, path, err)
 		}
-		return mirrorFile(path, filepath.Join(dst, suffix))
+		return MirrorFile(path, filepath.Join(dst, suffix))
 	})
 	return err
 }
@@ -255,7 +255,9 @@ func MirrorFile(src, dst string) error {
 	return err
 }
 
-
+func isExecMode(mode os.FileMode) bool {
+	return (mode & 0111) != 0
+}
 
 func GetUniqueId() int64 {
 	return time.Now().UnixNano()
