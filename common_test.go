@@ -44,7 +44,8 @@ func createDummyProject(project string) {
 		filepath.Join(project, "specs", "nested", "deep_nested"),
 		filepath.Join(project, "concepts", "nested"),
 		filepath.Join(project, "concepts", "nested", "deep_nested"),
-		filepath.Join(project, EnvDirectoryName)}
+		filepath.Join(project, EnvDirectoryName),
+		filepath.Join(project, EnvDirectoryName, DefaultEnvDir)}
 
 	filesToCreate := []string{filepath.Join(project, ManifestFile),
 		filepath.Join(project, "specs", "first.spec"),
@@ -54,7 +55,7 @@ func createDummyProject(project string) {
 		filepath.Join(project, "concepts", "first.cpt"),
 		filepath.Join(project, "concepts", "nested", "nested.cpt"),
 		filepath.Join(project, "concepts", "nested", "deep_nested", "deep_nested.cpt"),
-		filepath.Join(project, EnvDirectoryName, DefaultEnvFileName)}
+		filepath.Join(project, EnvDirectoryName, DefaultEnvDir, DefaultEnvFileName)}
 
 	for _, dirPath := range dirsToCreate {
 		os.Mkdir(dirPath, (os.FileMode)(0777))
@@ -124,14 +125,14 @@ func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
 
 func (s *MySuite) TestFindFilesInDir(c *C) {
 	foundSpecFiles := FindFilesInDir(filepath.Join(dummyProject, "specs"), func(filePath string) bool {
-			return filepath.Ext(filePath) == ".spec"
-		})
+		return filepath.Ext(filePath) == ".spec"
+	})
 
 	c.Assert(len(foundSpecFiles), Equals, 4)
 
 	foundConceptFiles := FindFilesInDir(filepath.Join(dummyProject, "concepts"), func(filePath string) bool {
-			return filepath.Ext(filePath) == ".cpt"
-		})
+		return filepath.Ext(filePath) == ".cpt"
+	})
 
 	c.Assert(len(foundConceptFiles), Equals, 3)
 }
@@ -145,5 +146,5 @@ func (s *MySuite) TestGetDefaultPropertiesFile(c *C) {
 	os.Chdir(dummyProject)
 	envFile, err := GetDefaultPropertiesFile()
 	c.Assert(err, IsNil)
-	c.Assert(envFile, Equals, filepath.Join(s.testDir, dummyProject, EnvDirectoryName, DefaultEnvFileName))
+	c.Assert(envFile, Equals, filepath.Join(s.testDir, dummyProject, EnvDirectoryName, DefaultEnvDir, DefaultEnvFileName))
 }

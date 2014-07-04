@@ -24,6 +24,7 @@ const (
 	NewFilePermissions      = 0644
 	DefaultEnvFileName      = "default.properties"
 	EnvDirectoryName        = "env"
+	DefaultEnvDir           = "default"
 	ExecutableName          = "gauge"
 	ProductName             = "gauge"
 	SpecsDirectoryName      = "specs"
@@ -89,7 +90,7 @@ func GetDefaultPropertiesFile() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defaultEnvFile := filepath.Join(envDir, DefaultEnvFileName)
+	defaultEnvFile := filepath.Join(envDir, DefaultEnvDir, DefaultEnvFileName)
 	if !FileExists(defaultEnvFile) {
 		return "", errors.New(fmt.Sprintf("Default environment file does not exist: %s \n", defaultEnvFile))
 	}
