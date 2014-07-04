@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,7 +15,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"log"
 )
 
 const (
@@ -82,6 +82,18 @@ func GetDirInProject(dirName string) (string, error) {
 	}
 
 	return requiredDir, nil
+}
+
+func GetDefaultPropertiesFile() (string, error) {
+	envDir, err := GetDirInProject(EnvDirectoryName)
+	if err != nil {
+		return "", err
+	}
+	defaultEnvFile := filepath.Join(envDir, DefaultEnvFileName)
+	if !FileExists(defaultEnvFile) {
+		return "", errors.New(fmt.Sprintf("Default environment file does not exist: %s \n", defaultEnvFile))
+	}
+	return defaultEnvFile, nil
 }
 
 func FindFilesInDir(dirPath string, isValidFile func(path string) bool) []string {
@@ -216,7 +228,7 @@ func MirrorFile(src, dst string) error {
 	dfi, err := os.Stat(dst)
 	if err == nil &&
 		isExecMode(sfi.Mode()) == isExecMode(dfi.Mode()) &&
-			(dfi.Mode()&os.ModeType == 0) &&
+		(dfi.Mode()&os.ModeType == 0) &&
 		dfi.Size() == sfi.Size() &&
 		dfi.ModTime().Unix() == sfi.ModTime().Unix() {
 		// Seems to not be modified.
