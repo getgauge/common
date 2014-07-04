@@ -5,6 +5,7 @@ import (
 	. "launchpad.net/gocheck"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -147,4 +148,22 @@ func (s *MySuite) TestGetDefaultPropertiesFile(c *C) {
 	envFile, err := GetDefaultPropertiesFile()
 	c.Assert(err, IsNil)
 	c.Assert(envFile, Equals, filepath.Join(s.testDir, dummyProject, EnvDirectoryName, DefaultEnvDir, DefaultEnvFileName))
+}
+
+func (s *MySuite) TestAppendingPropertiesToFile(c *C) {
+	os.Chdir(dummyProject)
+	defaultProperties, err := GetDefaultPropertiesFile()
+	c.Assert(err, IsNil)
+
+	firstProperty := &Property{Name: "first", Comment: "firstComment", DefaultValue: "firstValue"}
+	secondProperty := &Property{Name: "second", Comment: "secondComment", DefaultValue: "secondValue"}
+	err = AppendProperties(defaultProperties, firstProperty, secondProperty)
+	c.Assert(err, IsNil)
+
+	contents, _ := ReadFileContents(defaultProperties)
+	c.Assert(strings.Contains(contents, firstProperty.String()), Equals, true)
+	c.Assert(strings.Contains(contents, secondProperty.String()), Equals, true)
+	indexIsLesser := strings.Index(contents, firstProperty.String()) < strings.Index(contents, secondProperty.String())
+	c.Assert(indexIsLesser, Equals, true)
+
 }
