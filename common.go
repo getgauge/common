@@ -125,31 +125,38 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool) []string
 
 // gets the installation directory prefix
 // /usr or /usr/local or gauge_root
-func GetInstallationPrefix() string {
+func GetInstallationPrefix() (string, error) {
 	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
 	if gaugeRoot != "" {
-		return gaugeRoot
+		return gaugeRoot, nil
 	}
 
 	possibleInstallationPrefixes := []string{"/usr/local", "/usr"}
 	for _, p := range possibleInstallationPrefixes {
 		if FileExists(path.Join(p, "bin", ExecutableName)) {
-			return p
+			return p, nil
 		}
 	}
 
-	panic(errors.New("Can't find installation files"))
+	return "", errors.New("Can't find installation files")
 }
 
-func GetSearchPathForSharedFiles() string {
-	installationPrefix := GetInstallationPrefix()
-	return filepath.Join(installationPrefix, "share", ProductName)
+func GetSearchPathForSharedFiles() (string, error) {
+	installationPrefix, err := GetInstallationPrefix()
+	if err != nil {
+		return "", err
+	} else {
+		return filepath.Join(installationPrefix, "share", ProductName), nil
+	}
 }
 
 func GetLanguageJSONFilePath(language string) (string, error) {
-	searchPath := GetSearchPathForSharedFiles()
+	searchPath, err := GetSearchPathForSharedFiles()
+	if (err != nil) {
+		return "", err
+	}
 	languageJson := filepath.Join(searchPath, "languages", fmt.Sprintf("%s.json", language))
-	_, err := os.Stat(languageJson)
+	_, err = os.Stat(languageJson)
 	if err == nil {
 		return languageJson, nil
 	}
@@ -158,7 +165,10 @@ func GetLanguageJSONFilePath(language string) (string, error) {
 }
 
 func GetSkeletonFilePath(filename string) (string, error) {
-	searchPath := GetSearchPathForSharedFiles()
+	searchPath, err := GetSearchPathForSharedFiles()
+	if err != nil {
+		return "", err
+	}
 	skelFile := filepath.Join(searchPath, "skel", filename)
 	if FileExists(skelFile) {
 		return skelFile, nil
@@ -168,7 +178,10 @@ func GetSkeletonFilePath(filename string) (string, error) {
 }
 
 func GetPluginsPath() (string, error) {
-	searchPath := GetSearchPathForSharedFiles()
+	searchPath, err := GetSearchPathForSharedFiles()
+	if err != nil {
+		return "", nil
+	}
 	pluginsDir := filepath.Join(searchPath, "plugins")
 	if DirExists(pluginsDir) {
 		return pluginsDir, nil
@@ -177,9 +190,12 @@ func GetPluginsPath() (string, error) {
 	return "", errors.New("Failed to find the plugins directory")
 }
 
-func GetLibsPath() string {
-	prefix := GetInstallationPrefix()
-	return filepath.Join(prefix, "lib", ProductName)
+func GetLibsPath() (string, error) {
+	prefix, err := GetInstallationPrefix()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(prefix, "lib", ProductName), nil
 }
 
 func IsASupportedLanguage(language string) bool {
@@ -244,7 +260,7 @@ func MirrorFile(src, dst string) error {
 	dfi, err := os.Stat(dst)
 	if err == nil &&
 		isExecMode(sfi.Mode()) == isExecMode(dfi.Mode()) &&
-		(dfi.Mode()&os.ModeType == 0) &&
+			(dfi.Mode()&os.ModeType == 0) &&
 		dfi.Size() == sfi.Size() &&
 		dfi.ModTime().Unix() == sfi.ModTime().Unix() {
 		// Seems to not be modified.
@@ -284,7 +300,7 @@ func MirrorFile(src, dst string) error {
 }
 
 func isExecMode(mode os.FileMode) bool {
-	return (mode & 0111) != 0
+	return (mode&0111) != 0
 }
 
 func GetUniqueId() int64 {
