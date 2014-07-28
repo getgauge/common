@@ -2,6 +2,7 @@
 package common
 
 import (
+	"archive/zip"
 	"errors"
 	"fmt"
 	"io"
@@ -32,9 +33,11 @@ const (
 )
 
 const (
-	GaugeRootEnvVariableName = "GAUGE_ROOT"          //specifies the installation path if installs to non-standard location
-	GaugePortEnvName         = "GAUGE_PORT"          // user specifies this to use a specific port
-	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT" // this is the port which runner should use
+	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
+	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
+	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
+	wget                     = "wget"
+	curl                     = "curl" // this is the port which runner should use
 )
 
 type Property struct {
@@ -152,7 +155,7 @@ func GetSearchPathForSharedFiles() (string, error) {
 
 func GetLanguageJSONFilePath(language string) (string, error) {
 	searchPath, err := GetSearchPathForSharedFiles()
-	if (err != nil) {
+	if err != nil {
 		return "", err
 	}
 	languageJson := filepath.Join(searchPath, "languages", fmt.Sprintf("%s.json", language))
@@ -260,7 +263,7 @@ func MirrorFile(src, dst string) error {
 	dfi, err := os.Stat(dst)
 	if err == nil &&
 		isExecMode(sfi.Mode()) == isExecMode(dfi.Mode()) &&
-			(dfi.Mode()&os.ModeType == 0) &&
+		(dfi.Mode()&os.ModeType == 0) &&
 		dfi.Size() == sfi.Size() &&
 		dfi.ModTime().Unix() == sfi.ModTime().Unix() {
 		// Seems to not be modified.
@@ -300,7 +303,7 @@ func MirrorFile(src, dst string) error {
 }
 
 func isExecMode(mode os.FileMode) bool {
-	return (mode&0111) != 0
+	return (mode & 0111) != 0
 }
 
 func GetUniqueId() int64 {
@@ -350,24 +353,24 @@ func GetExecutableCommand(command string) *exec.Cmd {
 	return cmd
 }
 
-func downloadUsingWget(url, targetDir string) error {
-	wgetCommand := fmt.Sprintf("wget %s -O %s", url, filepath.Join(targetDir, filepath.Base(url)))
+func downloadUsingWget(url, targetFile string) error {
+	wgetCommand := fmt.Sprintf("wget %s -O %s", url, targetFile)
 	cmd := GetExecutableCommand(wgetCommand)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func downloadUsingCurl(url, targetDir string) error {
-	curlCommand := fmt.Sprintf("curl -o %s %s", filepath.Join(targetDir, filepath.Base(url)), url)
+func downloadUsingCurl(url, targetFile string) error {
+	curlCommand := fmt.Sprintf("curl -o %s %s", targetFile, url)
 	cmd := GetExecutableCommand(curlCommand)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func downloadUsingGo(url, targetDir string) error {
-	out, err := os.Create(filepath.Join(targetDir, filepath.Base(url)))
+func downloadUsingGo(url, targetFile string) error {
+	out, err := os.Create(targetFile)
 	if err != nil {
 		return err
 	}
@@ -381,20 +384,72 @@ func downloadUsingGo(url, targetDir string) error {
 	return err
 }
 
-func Download(url, targetDir string) error {
+func Download(url, targetDir string) (string, error) {
 	if !DirExists(targetDir) {
-		return errors.New(fmt.Sprintf("%s doesn't exists", targetDir))
+		return "", errors.New(fmt.Sprintf("%s doesn't exists", targetDir))
+	}
+	targetFile := filepath.Join(targetDir, filepath.Base(url))
+
+	if _, err := exec.LookPath(wget); err == nil {
+		return targetFile, downloadUsingWget(url, targetFile)
 	}
 
-	if _, err := exec.LookPath("wget"); err == nil {
-		return downloadUsingWget(url, targetDir)
+	if _, err := exec.LookPath(curl); err == nil {
+		return targetFile, downloadUsingCurl(url, targetFile)
 	}
 
-	if _, err := exec.LookPath("curl"); err == nil {
-		return downloadUsingCurl(url, targetDir)
+	return targetFile, downloadUsingGo(url, targetFile)
+}
+
+func DownloadToTempDir(url string) (string, error) {
+	tempDir, err := CreateEmptyTempDir()
+	if err != nil {
+		return "", err
+	}
+	return Download(url, tempDir)
+}
+
+func UnzipArchive(zipFile string) (string, error) {
+	if !FileExists(zipFile) {
+		return "", errors.New(fmt.Sprintf("ZipFile %s does not exist", zipFile))
+	}
+	dest, err := CreateEmptyTempDir()
+	if err != nil {
+		return "", err
 	}
 
-	return downloadUsingGo(url, targetDir)
+	r, err := zip.OpenReader(zipFile)
+	if err != nil {
+		return "", err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		rc, err := f.Open()
+		if err != nil {
+			return "", err
+		}
+		defer rc.Close()
+
+		path := filepath.Join(dest, f.Name)
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			f, err := os.OpenFile(
+				path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return "", err
+			}
+			defer f.Close()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	return dest, nil
 }
 
 func SaveFile(filePath, contents string, takeBackup bool) error {
@@ -414,6 +469,10 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 	}
 
 	return nil
+}
+
+func CreateEmptyTempDir() (string, error) {
+	return ioutil.TempDir("", fmt.Sprintf("%d", GetUniqueId()))
 }
 
 func TrimTrailingSpace(str string) string {
