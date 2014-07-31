@@ -11,9 +11,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -26,8 +30,8 @@ const (
 	DefaultEnvFileName      = "default.properties"
 	EnvDirectoryName        = "env"
 	DefaultEnvDir           = "default"
-	ExecutableName          = "gauge"
 	ProductName             = "gauge"
+	dotGauge                = ".gauge"
 	SpecsDirectoryName      = "specs"
 	ConceptFileExtension    = ".cpt"
 )
@@ -37,7 +41,8 @@ const (
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
 	wget                     = "wget"
-	curl                     = "curl" // this is the port which runner should use
+	curl                     = "curl"
+	appData                  = "APPDATA" // this is the port which runner should use
 )
 
 type Property struct {
@@ -133,15 +138,31 @@ func GetInstallationPrefix() (string, error) {
 	if gaugeRoot != "" {
 		return gaugeRoot, nil
 	}
+	var possibleInstallationPrefixes []string
+	if isWindows() {
+		programFilesPath := os.Getenv("PROGRAMFILES")
+		if programFilesPath == "" {
+			return "", errors.New("Cannot locate gauge shared file. Could not find Program Files directory.")
+		}
+		possibleInstallationPrefixes = []string{filepath.Join(programFilesPath, ProductName)}
+	} else {
+		possibleInstallationPrefixes = []string{"/usr/local", "/usr"}
+	}
 
-	possibleInstallationPrefixes := []string{"/usr/local", "/usr"}
 	for _, p := range possibleInstallationPrefixes {
-		if FileExists(path.Join(p, "bin", ExecutableName)) {
+		if FileExists(path.Join(p, "bin", ExecutableName())) {
 			return p, nil
 		}
 	}
 
 	return "", errors.New("Can't find installation files")
+}
+
+func ExecutableName() string {
+	if isWindows() {
+		return "gauge.exe"
+	}
+	return "gauge"
 }
 
 func GetSearchPathForSharedFiles() (string, error) {
@@ -154,17 +175,65 @@ func GetSearchPathForSharedFiles() (string, error) {
 }
 
 func GetLanguageJSONFilePath(language string) (string, error) {
-	searchPath, err := GetSearchPathForSharedFiles()
+	langaugeInstallDir, err := GetPluginInstallDir(language, "")
 	if err != nil {
 		return "", err
 	}
-	languageJson := filepath.Join(searchPath, "languages", fmt.Sprintf("%s.json", language))
+	languageJson := filepath.Join(langaugeInstallDir, fmt.Sprintf("%s.json", language))
 	_, err = os.Stat(languageJson)
 	if err == nil {
 		return languageJson, nil
 	}
 
 	return "", errors.New(fmt.Sprintf("Failed to find the implementation for: %s", language))
+}
+
+func GetPluginInstallDir(pluginName, version string) (string, error) {
+	allPluginsDir, err := GetPluginsInstallDir()
+	if err != nil {
+		return "", err
+	}
+	var pluginDir string
+	if version != "" {
+		pluginDir = filepath.Join(allPluginsDir, pluginName, version)
+	} else {
+		latestVersion, err := GetLatestInstalledPluginVersion(pluginName)
+		if err != nil {
+			return "", err
+		}
+		pluginDir = filepath.Join(allPluginsDir, pluginName, latestVersion)
+	}
+	if !DirExists(allPluginsDir) {
+		return "", errors.New(fmt.Sprintf("Plugin install directory %s does not exist", pluginDir))
+	}
+	return pluginDir, nil
+}
+
+func GetLatestInstalledPluginVersion(pluginName string) (string, error) {
+	pluginsInstallDir, err := GetPluginsInstallDir()
+	if err != nil {
+		return "", err
+	}
+	pluginDir := filepath.Join(pluginsInstallDir, pluginName)
+	files, err := ioutil.ReadDir(pluginDir)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Error listing files in plugin directory %s: %s", pluginDir, err.Error()))
+	}
+	availableVersions := make([]*version, 0)
+
+	for _, file := range files {
+		if file.IsDir() {
+			version, err := parseVersion(file.Name())
+			if err == nil {
+				availableVersions = append(availableVersions, version)
+			}
+		}
+	}
+	if len(availableVersions) < 1 {
+		return "", errors.New(fmt.Sprintf("No valid versions of plugin %s found in %s", pluginName, pluginDir))
+	}
+	LatestVersion := getLatestVersion(availableVersions)
+	return filepath.Join(pluginDir, LatestVersion.String()), nil
 }
 
 func GetSkeletonFilePath(filename string) (string, error) {
@@ -180,17 +249,28 @@ func GetSkeletonFilePath(filename string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Failed to find the skeleton file: %s", filename))
 }
 
-func GetPluginsPath() (string, error) {
-	searchPath, err := GetSearchPathForSharedFiles()
-	if err != nil {
-		return "", nil
-	}
-	pluginsDir := filepath.Join(searchPath, "plugins")
-	if DirExists(pluginsDir) {
-		return pluginsDir, nil
+func GetPluginsInstallDir() (string, error) {
+	var pluginInstallDir string
+
+	if isWindows() {
+		appDataDir := os.Getenv(appData)
+		if appDataDir == "" {
+			return "", errors.New("Failed to find plugin installation path. Could not get APPDATA")
+		}
+		pluginInstallDir = filepath.Join(appDataDir, ProductName)
+	} else {
+		userHome, err := getUserHome()
+		if err != nil {
+			return "", errors.New("Failed to find plugin installation path. Could not get Uder home directory")
+		}
+		pluginInstallDir = filepath.Join(userHome, dotGauge)
 	}
 
-	return "", errors.New("Failed to find the plugins directory")
+	if !DirExists(pluginInstallDir) {
+		return "", errors.New(fmt.Sprintf("Plugin install directory %s does not exist", pluginInstallDir))
+	}
+	return pluginInstallDir, nil
+
 }
 
 func GetLibsPath() (string, error) {
@@ -202,8 +282,15 @@ func GetLibsPath() (string, error) {
 }
 
 func IsASupportedLanguage(language string) bool {
-	_, err := GetLanguageJSONFilePath(language)
-	return err == nil
+	return IsPluginInstalled(language, "")
+}
+
+func IsPluginInstalled(name, version string) bool {
+	pluginsDir, err := GetPluginsInstallDir()
+	if err != nil {
+		return false
+	}
+	return DirExists(path.Join(pluginsDir, name, version))
 }
 
 func ReadFileContents(file string) (string, error) {
@@ -471,6 +558,18 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 	return nil
 }
 
+func getUserHome() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return usr.HomeDir, nil
+}
+
+func isWindows() bool {
+	return runtime.GOOS == "windows"
+}
+
 func CreateEmptyTempDir() (string, error) {
 	return ioutil.TempDir("", fmt.Sprintf("%d", GetUniqueId()))
 }
@@ -482,4 +581,65 @@ func TrimTrailingSpace(str string) string {
 
 func (property *Property) String() string {
 	return fmt.Sprintf("#%s\n%s = %s", property.Comment, property.Name, property.DefaultValue)
+}
+
+type version struct {
+	major int
+	minor int
+	patch int
+}
+
+func parseVersion(versionText string) (*version, error) {
+	splits := strings.Split(versionText, ".")
+	if len(splits) != 3 {
+		return nil, errors.New("Incorrect number of '.' characters in Version. Version should be of the form 1.5.7")
+	}
+	major, err := strconv.Atoi(splits[0])
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Error parsing major version number %s to integer. %s", splits[0], err.Error()))
+	}
+	minor, err := strconv.Atoi(splits[1])
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Error parsing minor version number %s to integer. %s", splits[0], err.Error()))
+	}
+	patch, err := strconv.Atoi(splits[2])
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Error parsing patch version number %s to integer. %s", splits[0], err.Error()))
+	}
+
+	return &version{major, minor, patch}, nil
+}
+
+type ByDecreasingVersion []*version
+
+func (a ByDecreasingVersion) Len() int      { return len(a) }
+func (a ByDecreasingVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByDecreasingVersion) Less(i, j int) bool {
+	return a[i].isGreaterThan(a[j])
+}
+
+func getLatestVersion(versions []*version) *version {
+	sort.Sort(ByDecreasingVersion(versions))
+	return versions[0]
+}
+
+func (version1 *version) isGreaterThan(version2 *version) bool {
+	if version1.major > version2.major {
+		return true
+	} else if version1.major == version2.major {
+		if version1.minor > version2.minor {
+			return true
+		} else if version1.minor == version2.minor {
+			if version1.patch > version2.patch {
+				return true
+			} else {
+				return false
+			}
+		}
+	}
+	return false
+}
+
+func (version *version) String() string {
+	return fmt.Sprintf("%d.%d.%d", version.major, version.minor, version.patch)
 }
