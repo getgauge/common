@@ -34,6 +34,8 @@ const (
 	dotGauge                = ".gauge"
 	SpecsDirectoryName      = "specs"
 	ConceptFileExtension    = ".cpt"
+	GaugeProjectRootEnv     = "gauge_project_root"
+	Plugins                 = "plugins"
 )
 
 const (
@@ -175,17 +177,16 @@ func GetSearchPathForSharedFiles() (string, error) {
 }
 
 func GetLanguageJSONFilePath(language string) (string, error) {
-	langaugeInstallDir, err := GetPluginInstallDir(language, "")
+	languageInstallDir, err := GetPluginInstallDir(language, "")
 	if err != nil {
 		return "", err
 	}
-	languageJson := filepath.Join(langaugeInstallDir, fmt.Sprintf("%s.json", language))
-	_, err = os.Stat(languageJson)
-	if err == nil {
-		return languageJson, nil
+	languageJson := filepath.Join(languageInstallDir, fmt.Sprintf("%s.json", language))
+	if !FileExists(languageJson) {
+		return "", errors.New(fmt.Sprintf("Failed to find the implementation for: %s. %s does not exist.", language, languageJson))
 	}
 
-	return "", errors.New(fmt.Sprintf("Failed to find the implementation for: %s", language))
+	return languageJson, nil
 }
 
 func GetPluginInstallDir(pluginName, version string) (string, error) {
@@ -197,11 +198,10 @@ func GetPluginInstallDir(pluginName, version string) (string, error) {
 	if version != "" {
 		pluginDir = filepath.Join(allPluginsDir, pluginName, version)
 	} else {
-		latestVersion, err := GetLatestInstalledPluginVersion(pluginName)
+		pluginDir, err = GetLatestInstalledPluginVersionPath(pluginName)
 		if err != nil {
 			return "", err
 		}
-		pluginDir = filepath.Join(allPluginsDir, pluginName, latestVersion)
 	}
 	if !DirExists(allPluginsDir) {
 		return "", errors.New(fmt.Sprintf("Plugin install directory %s does not exist", pluginDir))
@@ -209,7 +209,7 @@ func GetPluginInstallDir(pluginName, version string) (string, error) {
 	return pluginDir, nil
 }
 
-func GetLatestInstalledPluginVersion(pluginName string) (string, error) {
+func GetLatestInstalledPluginVersionPath(pluginName string) (string, error) {
 	pluginsInstallDir, err := GetPluginsInstallDir()
 	if err != nil {
 		return "", err
@@ -257,13 +257,13 @@ func GetPluginsInstallDir() (string, error) {
 		if appDataDir == "" {
 			return "", errors.New("Failed to find plugin installation path. Could not get APPDATA")
 		}
-		pluginInstallDir = filepath.Join(appDataDir, ProductName)
+		pluginInstallDir = filepath.Join(appDataDir, ProductName, Plugins)
 	} else {
 		userHome, err := getUserHome()
 		if err != nil {
-			return "", errors.New("Failed to find plugin installation path. Could not get Uder home directory")
+			return "", errors.New("Failed to find plugin installation path. Could not get User home directory")
 		}
-		pluginInstallDir = filepath.Join(userHome, dotGauge)
+		pluginInstallDir = filepath.Join(userHome, dotGauge, Plugins)
 	}
 
 	if !DirExists(pluginInstallDir) {
