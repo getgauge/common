@@ -190,31 +190,23 @@ func GetLanguageJSONFilePath(language string) (string, error) {
 }
 
 func GetPluginInstallDir(pluginName, version string) (string, error) {
-	allPluginsDir, err := GetPluginsInstallDir()
+	allPluginsInstallDir, err := GetPluginsInstallDir(pluginName)
 	if err != nil {
 		return "", err
 	}
-	var pluginDir string
+	pluginDir := path.Join(allPluginsInstallDir, pluginName)
 	if version != "" {
-		pluginDir = filepath.Join(allPluginsDir, pluginName, version)
+		pluginDir = filepath.Join(pluginDir, version)
 	} else {
-		pluginDir, err = GetLatestInstalledPluginVersionPath(pluginName)
+		pluginDir, err = GetLatestInstalledPluginVersionPath(pluginDir)
 		if err != nil {
 			return "", err
 		}
 	}
-	if !DirExists(allPluginsDir) {
-		return "", errors.New(fmt.Sprintf("Plugin install directory %s does not exist", pluginDir))
-	}
 	return pluginDir, nil
 }
 
-func GetLatestInstalledPluginVersionPath(pluginName string) (string, error) {
-	pluginsInstallDir, err := GetPluginsInstallDir()
-	if err != nil {
-		return "", err
-	}
-	pluginDir := filepath.Join(pluginsInstallDir, pluginName)
+func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
 	files, err := ioutil.ReadDir(pluginDir)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Error listing files in plugin directory %s: %s", pluginDir, err.Error()))
@@ -229,6 +221,8 @@ func GetLatestInstalledPluginVersionPath(pluginName string) (string, error) {
 			}
 		}
 	}
+	pluginName := filepath.Base(pluginDir)
+
 	if len(availableVersions) < 1 {
 		return "", errors.New(fmt.Sprintf("No valid versions of plugin %s found in %s", pluginName, pluginDir))
 	}
@@ -249,28 +243,48 @@ func GetSkeletonFilePath(filename string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Failed to find the skeleton file: %s", filename))
 }
 
-func GetPluginsInstallDir() (string, error) {
-	var pluginInstallDir string
+func GetPluginsInstallDir(pluginName string) (string, error) {
+	pluginInstallPrefixes, err := getPluginInstallPrefixes()
+	if err != nil {
+		return "", err
+	}
 
+	for _, prefix := range pluginInstallPrefixes {
+		if FileExists(path.Join(prefix, pluginName)) {
+			return prefix, nil
+		}
+	}
+	return "", errors.New(fmt.Sprintf("Plugin %s not installed at locations - %s", pluginInstallPrefixes))
+}
+
+func getPluginInstallPrefixes() ([]string, error) {
+	prefixes := make([]string, 0)
+	primaryPluginInstallDir, err := GetPrimaryPluginsInstallDir()
+	if err != nil {
+		return nil, err
+	}
+	prefixes = append(prefixes, primaryPluginInstallDir)
+	sharedDir, err := GetSearchPathForSharedFiles()
+	if err != nil {
+		return nil, err
+	}
+	prefixes = append(prefixes, path.Join(sharedDir, Plugins))
+	return prefixes, nil
+}
+
+func GetPrimaryPluginsInstallDir() (string, error) {
 	if isWindows() {
 		appDataDir := os.Getenv(appData)
 		if appDataDir == "" {
 			return "", errors.New("Failed to find plugin installation path. Could not get APPDATA")
 		}
-		pluginInstallDir = filepath.Join(appDataDir, ProductName, Plugins)
-	} else {
-		userHome, err := getUserHome()
-		if err != nil {
-			return "", errors.New("Failed to find plugin installation path. Could not get User home directory")
-		}
-		pluginInstallDir = filepath.Join(userHome, dotGauge, Plugins)
+		return filepath.Join(appDataDir, ProductName, Plugins), nil
 	}
-
-	if !DirExists(pluginInstallDir) {
-		return "", errors.New(fmt.Sprintf("Plugin install directory %s does not exist", pluginInstallDir))
+	userHome, err := getUserHome()
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to find plugin installation path. Could not get User home directory: %s", err))
 	}
-	return pluginInstallDir, nil
-
+	return filepath.Join(userHome, dotGauge, Plugins), nil
 }
 
 func GetLibsPath() (string, error) {
@@ -286,7 +300,7 @@ func IsASupportedLanguage(language string) bool {
 }
 
 func IsPluginInstalled(name, version string) bool {
-	pluginsDir, err := GetPluginsInstallDir()
+	pluginsDir, err := GetPluginsInstallDir(name)
 	if err != nil {
 		return false
 	}
