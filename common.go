@@ -254,7 +254,7 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 			return prefix, nil
 		}
 	}
-	return "", errors.New(fmt.Sprintf("Plugin %s not installed at locations - %s", pluginInstallPrefixes))
+	return "", errors.New(fmt.Sprintf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes))
 }
 
 func getPluginInstallPrefixes() ([]string, error) {
