@@ -463,7 +463,7 @@ func downloadUsingWget(url, targetFile string) error {
 }
 
 func downloadUsingCurl(url, targetFile string) error {
-	curlCommand := fmt.Sprintf("curl -o %s %s", targetFile, url)
+	curlCommand := fmt.Sprintf("curl -L -o %s %s", targetFile, url)
 	cmd := GetExecutableCommand(curlCommand)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
