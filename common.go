@@ -471,6 +471,7 @@ func downloadUsingCurl(url, targetFile string) error {
 }
 
 func downloadUsingGo(url, targetFile string) error {
+	fmt.Sprintf("Downloading => %s.  This could take a few minutes...", url)
 	out, err := os.Create(targetFile)
 	if err != nil {
 		return err
