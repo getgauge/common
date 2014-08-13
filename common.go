@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
+	"github.com/dmotylev/goproperties"
 	"io"
 	"io/ioutil"
 	"log"
@@ -44,7 +45,9 @@ const (
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
 	wget                     = "wget"
 	curl                     = "curl"
-	appData                  = "APPDATA" // this is the port which runner should use
+	appData                  = "APPDATA"
+	gaugePropertiedFile      = "gauge.properties" // this is the port which runner should use
+	GaugeRepositoryUrl       = "gauge_repository_url"
 )
 
 type Property struct {
@@ -307,6 +310,19 @@ func IsPluginInstalled(name, version string) bool {
 	return DirExists(path.Join(pluginsDir, name, version))
 }
 
+func GetGaugeConfiguration() (properties.Properties, error) {
+	sharedDir, err := GetSearchPathForSharedFiles()
+	if err != nil {
+		return nil, err
+	}
+	propertiesFile := filepath.Join(sharedDir, gaugePropertiedFile)
+	config, err := properties.Load(propertiesFile)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
 func ReadFileContents(file string) (string, error) {
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -457,6 +473,7 @@ func GetExecutableCommand(command string) *exec.Cmd {
 func downloadUsingWget(url, targetFile string) error {
 	wgetCommand := fmt.Sprintf("wget %s -O %s", url, targetFile)
 	cmd := GetExecutableCommand(wgetCommand)
+	fmt.Sprintf("Downloading using wget => %s", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -464,6 +481,7 @@ func downloadUsingWget(url, targetFile string) error {
 
 func downloadUsingCurl(url, targetFile string) error {
 	curlCommand := fmt.Sprintf("curl -L -o %s %s", targetFile, url)
+	fmt.Sprintf("Downloading using curl => %s", curlCommand)
 	cmd := GetExecutableCommand(curlCommand)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
