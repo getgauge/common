@@ -594,9 +594,25 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 func getUserHome() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
-		return "", err
+		homeFromEnv := getUserHomeFromEnv()
+		if homeFromEnv != "" {
+			return homeFromEnv, nil
+		} else {
+			return "", errors.New("Could not get the home directory")
+		}
 	}
 	return usr.HomeDir, nil
+}
+
+func getUserHomeFromEnv() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+		return home
+	}
+	return os.Getenv("HOME")
 }
 
 func isWindows() bool {
