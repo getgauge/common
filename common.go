@@ -5,13 +5,13 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
-	"github.com/dmotylev/goproperties"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"github.com/dmotylev/goproperties"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -35,19 +35,19 @@ const (
 	dotGauge                = ".gauge"
 	SpecsDirectoryName      = "specs"
 	ConceptFileExtension    = ".cpt"
-	GaugeProjectRootEnv     = "gauge_project_root"
 	Plugins                 = "plugins"
+	wget                    = "wget"
+	curl                    = "curl"
+	appData                 = "APPDATA"
+	gaugePropertiedFile     = "gauge.properties" // this is the port which runner should use
+	GaugeRepositoryUrl      = "gauge_repository_url"
 )
 
 const (
+	GaugeProjectRootEnv      = "GAUGE_PROJECT_ROOT"
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
-	wget                     = "wget"
-	curl                     = "curl"
-	appData                  = "APPDATA"
-	gaugePropertiedFile      = "gauge.properties" // this is the port which runner should use
-	GaugeRepositoryUrl       = "gauge_repository_url"
 )
 
 type Property struct {
