@@ -5,13 +5,13 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
+	"github.com/dmotylev/goproperties"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"github.com/dmotylev/goproperties"
 	"os/user"
 	"path"
 	"path/filepath"
@@ -458,22 +458,38 @@ func SetEnvVariable(key, value string) error {
 	return nil
 }
 
-func GetExecutableCommand(command string) *exec.Cmd {
+func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := os.Chdir(workingDir); err != nil {
+		return nil, errors.New(fmt.Sprintf("Failed to execute command => %s. %s", command, err))
+	}
+	defer os.Chdir(pwd)
+	cmd := GetExecutableCommand(command...)
+	cmd.Stdout = outputStreamWriter
+	cmd.Stderr = errorStreamWriter
+	err = cmd.Start()
+	return cmd, err
+
+}
+
+func GetExecutableCommand(command ...string) *exec.Cmd {
 	var cmd *exec.Cmd
-	cmdParts := strings.Split(command, " ")
-	if len(cmdParts) == 0 {
+	if len(command) == 0 {
 		panic(errors.New("Invalid executable command"))
-	} else if len(cmdParts) > 1 {
-		cmd = exec.Command(cmdParts[0], cmdParts[1:]...)
+	} else if len(command) > 1 {
+		cmd = exec.Command(command[0], command[1:]...)
 	} else {
-		cmd = exec.Command(cmdParts[0])
+		cmd = exec.Command(command[0])
 	}
 	return cmd
 }
 
 func downloadUsingWget(url, targetFile string) error {
-	wgetCommand := fmt.Sprintf("wget %s -O %s", url, targetFile)
-	cmd := GetExecutableCommand(wgetCommand)
+	cmd := GetExecutableCommand("wget", url, "-O", targetFile)
 	fmt.Sprintf("Downloading using wget => %s", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -481,9 +497,8 @@ func downloadUsingWget(url, targetFile string) error {
 }
 
 func downloadUsingCurl(url, targetFile string) error {
-	curlCommand := fmt.Sprintf("curl -L -o %s %s", targetFile, url)
-	fmt.Sprintf("Downloading using curl => %s", curlCommand)
-	cmd := GetExecutableCommand(curlCommand)
+	cmd := GetExecutableCommand("curl", "-L", "-o", targetFile, url)
+	fmt.Sprintf("Downloading using curl => %s", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
