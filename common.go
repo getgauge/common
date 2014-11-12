@@ -65,7 +65,6 @@ func GetProjectRootFromWD() (string, error) {
 		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
 		os.Exit(2)
 	}
-
 	return ifManifestExists(pwd)
 }
 func ifManifestExists(pwd string) (string, error) {
@@ -93,12 +92,9 @@ func ifManifestExists(pwd string) (string, error) {
 }
 
 func GetDirInProject(dirName string, specPath string) (string, error) {
-	projectRoot, err := GetProjectRootFromWD()
+	projectRoot, err := GetProjectRoot(specPath)
 	if err != nil {
-		projectRoot, err = GetProjectRootFromSpecPath(specPath)
-		if err != nil {
-			return "", err
-		}
+		return "", err
 	}
 	requiredDir := filepath.Join(projectRoot, dirName)
 	if !DirExists(requiredDir) {
@@ -106,6 +102,17 @@ func GetDirInProject(dirName string, specPath string) (string, error) {
 	}
 
 	return requiredDir, nil
+}
+
+func GetProjectRoot(specPath string) (string, error) {
+	projectRoot, err := GetProjectRootFromWD()
+	if err != nil {
+		projectRoot, err = GetProjectRootFromSpecPath(specPath)
+		if err != nil {
+			return "", err
+		}
+	}
+	return projectRoot, err
 }
 
 func GetProjectRootFromSpecPath(specPath string) (string, error) {
