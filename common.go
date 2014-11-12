@@ -59,13 +59,16 @@ type Property struct {
 
 // A project root is where a manifest.json files exists
 // this routine keeps going upwards searching for manifest.json
-func GetProjectRoot() (string, error) {
+func GetProjectRootFromWD() (string, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
 		os.Exit(2)
 	}
 
+	return ifManifestExists(pwd)
+}
+func ifManifestExists(pwd string) (string, error) {
 	manifestExists := func(dir string) bool {
 		return FileExists(path.Join(dir, ManifestFile))
 	}
@@ -76,25 +79,27 @@ func GetProjectRoot() (string, error) {
 			return dir, nil
 		}
 		if dir == filepath.Clean(fmt.Sprintf("%c", os.PathSeparator)) || dir == "" {
-			return "", errors.New("Failed to find project directory, run the command inside the project")
+			return "", errors.New("Failed to find project directory")
 		}
 		oldDir := dir
 		dir = filepath.Clean(fmt.Sprintf("%s%c..", dir, os.PathSeparator))
 		if dir == oldDir {
-			return "", errors.New("Failed to find project directory, run the command inside the project")
+			return "", errors.New("Failed to find project directory")
 		}
 
 	}
+	return "", errors.New("Failed to find project directory")
 
-	return "", errors.New("Failed to find project directory, run the command inside the project")
 }
 
-func GetDirInProject(dirName string) (string, error) {
-	projectRoot, err := GetProjectRoot()
+func GetDirInProject(dirName string, specPath string) (string, error) {
+	projectRoot, err := GetProjectRootFromWD()
 	if err != nil {
-		return "", err
+		projectRoot, err = GetProjectRootFromSpecPath(specPath)
+		if err != nil {
+			return "", err
+		}
 	}
-
 	requiredDir := filepath.Join(projectRoot, dirName)
 	if !DirExists(requiredDir) {
 		return "", errors.New(fmt.Sprintf("Could not find %s directory. %s does not exist", dirName, requiredDir))
@@ -103,8 +108,18 @@ func GetDirInProject(dirName string) (string, error) {
 	return requiredDir, nil
 }
 
+func GetProjectRootFromSpecPath(specPath string) (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		errors.New("Unable to get working directory")
+	}
+	dir, _ := path.Split(specPath)
+	fullPath := path.Join(wd, dir)
+	return ifManifestExists(fullPath)
+}
+
 func GetDefaultPropertiesFile() (string, error) {
-	envDir, err := GetDirInProject(EnvDirectoryName)
+	envDir, err := GetDirInProject(EnvDirectoryName, "")
 	if err != nil {
 		return "", err
 	}

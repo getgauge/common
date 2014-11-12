@@ -74,7 +74,7 @@ func (s *MySuite) TestGetProjectRoot(c *C) {
 	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
 	os.Chdir(dummyProject)
 
-	root, err := GetProjectRoot()
+	root, err := GetProjectRootFromWD()
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
@@ -84,7 +84,7 @@ func (s *MySuite) TestGetProjectRootFromNestedDir(c *C) {
 	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
 	os.Chdir(filepath.Join(dummyProject, "specs", "nested", "deep_nested"))
 
-	root, err := GetProjectRoot()
+	root, err := GetProjectRootFromWD()
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
@@ -92,15 +92,15 @@ func (s *MySuite) TestGetProjectRootFromNestedDir(c *C) {
 
 func (s *MySuite) TestGetProjectFailing(c *C) {
 
-	_, err := GetProjectRoot()
+	_, err := GetProjectRootFromWD()
 	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "Failed to find project directory, run the command inside the project")
+	c.Assert(err.Error(), Equals, "Failed to find project directory")
 }
 
 func (s *MySuite) TestGetDirInProject(c *C) {
 	os.Chdir(dummyProject)
 
-	concepts, err := GetDirInProject("concepts")
+	concepts, err := GetDirInProject("concepts", "")
 
 	c.Assert(err, IsNil)
 	c.Assert(concepts, Equals, filepath.Join(s.testDir, dummyProject, "concepts"))
@@ -109,7 +109,7 @@ func (s *MySuite) TestGetDirInProject(c *C) {
 func (s *MySuite) TestGetDirInProjectFromNestedDir(c *C) {
 	os.Chdir(filepath.Join(dummyProject, "specs", "nested", "deep_nested"))
 
-	concepts, err := GetDirInProject("concepts")
+	concepts, err := GetDirInProject("concepts", "")
 
 	c.Assert(err, IsNil)
 	c.Assert(concepts, Equals, filepath.Join(s.testDir, dummyProject, "concepts"))
@@ -118,7 +118,7 @@ func (s *MySuite) TestGetDirInProjectFromNestedDir(c *C) {
 func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
 	os.Chdir(filepath.Join(dummyProject, "specs", "nested", "deep_nested"))
 
-	_, err := GetDirInProject("invalid")
+	_, err := GetDirInProject("invalid", "")
 
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, fmt.Sprintf("Could not find invalid directory. %s does not exist", filepath.Join(s.testDir, dummyProject, "invalid")))
@@ -166,4 +166,33 @@ func (s *MySuite) TestAppendingPropertiesToFile(c *C) {
 	indexIsLesser := strings.Index(contents, firstProperty.String()) < strings.Index(contents, secondProperty.String())
 	c.Assert(indexIsLesser, Equals, true)
 
+}
+
+func (s *MySuite) TestGetProjectRootFromSpecPath(c *C) {
+	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
+	os.Chdir(s.testDir)
+
+	root, err := GetProjectRootFromSpecPath(dummyProject + "/specs/")
+
+	c.Assert(err, IsNil)
+	c.Assert(root, Equals, expectedRoot)
+}
+
+func (s *MySuite) TestGetProjectRootGivesErrorWhenProvidedInvalidSpecFilePath(c *C) {
+	os.Chdir(s.testDir)
+
+	root, err := GetProjectRootFromSpecPath("/specs/nested/deep_nested/deep_nested.spec")
+
+	c.Assert(err.Error(), Equals, fmt.Sprintf("Failed to find project directory"))
+	c.Assert(root, Equals, "")
+}
+
+func (s *MySuite) TestGetProjectRootFromSpecFilePath(c *C) {
+	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
+	os.Chdir(s.testDir)
+
+	root, err := GetProjectRootFromSpecPath(dummyProject + "/specs/nested/deep_nested/deep_nested.spec")
+
+	c.Assert(err, IsNil)
+	c.Assert(root, Equals, expectedRoot)
 }
