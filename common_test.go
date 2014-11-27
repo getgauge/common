@@ -74,7 +74,7 @@ func (s *MySuite) TestGetProjectRoot(c *C) {
 	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
 	os.Chdir(dummyProject)
 
-	root, err := GetProjectRootFromWD()
+	root, err := GetProjectRoot()
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
@@ -84,7 +84,7 @@ func (s *MySuite) TestGetProjectRootFromNestedDir(c *C) {
 	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
 	os.Chdir(filepath.Join(dummyProject, "specs", "nested", "deep_nested"))
 
-	root, err := GetProjectRootFromWD()
+	root, err := GetProjectRoot()
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
@@ -92,7 +92,7 @@ func (s *MySuite) TestGetProjectRootFromNestedDir(c *C) {
 
 func (s *MySuite) TestGetProjectFailing(c *C) {
 
-	_, err := GetProjectRootFromWD()
+	_, err := GetProjectRoot()
 	c.Assert(err, NotNil)
 	c.Assert(err.Error(), Equals, "Failed to find project directory")
 }

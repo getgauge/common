@@ -59,15 +59,15 @@ type Property struct {
 
 // A project root is where a manifest.json files exists
 // this routine keeps going upwards searching for manifest.json
-func GetProjectRootFromWD() (string, error) {
+func GetProjectRoot() (string, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
 		os.Exit(2)
 	}
-	return ifManifestExists(pwd)
+	return findManifestInPath(pwd)
 }
-func ifManifestExists(pwd string) (string, error) {
+func findManifestInPath(pwd string) (string, error) {
 	manifestExists := func(dir string) bool {
 		return FileExists(path.Join(dir, ManifestFile))
 	}
@@ -92,7 +92,7 @@ func ifManifestExists(pwd string) (string, error) {
 }
 
 func GetDirInProject(dirName string, specPath string) (string, error) {
-	projectRoot, err := GetProjectRoot(specPath)
+	projectRoot, err := GetProjectRootFromSpecPath(specPath)
 	if err != nil {
 		return "", err
 	}
@@ -104,25 +104,17 @@ func GetDirInProject(dirName string, specPath string) (string, error) {
 	return requiredDir, nil
 }
 
-func GetProjectRoot(specPath string) (string, error) {
-	projectRoot, err := GetProjectRootFromWD()
+func GetProjectRootFromSpecPath(specPath string) (string, error) {
+	projectRoot, err := GetProjectRoot()
 	if err != nil {
-		projectRoot, err = GetProjectRootFromSpecPath(specPath)
-		if err != nil {
-			return "", err
+		dir, _ := path.Split(specPath)
+		fullPath, pathErr := filepath.Abs(dir)
+		if pathErr != nil {
+			return "", errors.New(fmt.Sprintf("Unable to get absolute path to specifications. %s", err))
 		}
+		return findManifestInPath(fullPath)
 	}
 	return projectRoot, err
-}
-
-func GetProjectRootFromSpecPath(specPath string) (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		errors.New("Unable to get working directory")
-	}
-	dir, _ := path.Split(specPath)
-	fullPath := path.Join(wd, dir)
-	return ifManifestExists(fullPath)
 }
 
 func GetDefaultPropertiesFile() (string, error) {
