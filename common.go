@@ -587,23 +587,31 @@ func UnzipArchive(zipFile string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		defer rc.Close()
+		error := func() error {
+			defer rc.Close()
 
-		path := filepath.Join(dest, f.Name)
-		if f.FileInfo().IsDir() {
-			os.MkdirAll(path, f.Mode())
-		} else {
-			f, err := os.OpenFile(
-				path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return "", err
-			}
-			defer f.Close()
+			path := filepath.Join(dest, f.Name)
+			os.MkdirAll(filepath.Dir(path), NewDirectoryPermissions)
+			if f.FileInfo().IsDir() {
+				os.MkdirAll(path, f.Mode())
+			} else {
+				f, err := os.OpenFile(
+					path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+				if err != nil {
+					return err
+				}
+				defer f.Close()
 
-			_, err = io.Copy(f, rc)
-			if err != nil {
-				return "", err
+				_, err = io.Copy(f, rc)
+				if err != nil {
+					return err
+				}
 			}
+			return nil
+		}()
+		if error != nil {
+			return "", error
+
 		}
 	}
 
