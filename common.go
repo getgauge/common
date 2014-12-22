@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
+	"github.com/dmotylev/goproperties"
 	"io"
 	"io/ioutil"
 	"log"
@@ -39,8 +40,6 @@ const (
 	curl                    = "curl"
 	appData                 = "APPDATA"
 	gaugePropertiesFile     = "gauge.properties"
-	GaugeRepositoryUrl      = "gauge_repository_url"
-	ApiRefreshInterval      = "gauge_api_refresh_interval"
 )
 
 const (
