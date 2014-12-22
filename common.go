@@ -39,8 +39,9 @@ const (
 	wget                    = "wget"
 	curl                    = "curl"
 	appData                 = "APPDATA"
-	gaugePropertiedFile     = "gauge.properties" // this is the port which runner should use
+	gaugePropertiesFile     = "gauge.properties"
 	GaugeRepositoryUrl      = "gauge_repository_url"
+	ApiRefreshInterval      = "gauge_api_refresh_interval"
 )
 
 const (
@@ -330,7 +331,7 @@ func GetGaugeConfiguration() (properties.Properties, error) {
 	if err != nil {
 		return nil, err
 	}
-	propertiesFile := filepath.Join(sharedDir, gaugePropertiedFile)
+	propertiesFile := filepath.Join(sharedDir, gaugePropertiesFile)
 	config, err := properties.Load(propertiesFile)
 	if err != nil {
 		return nil, err
