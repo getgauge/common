@@ -5,7 +5,6 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
-	"github.com/dmotylev/goproperties"
 	"io"
 	"io/ioutil"
 	"log"
@@ -49,6 +48,7 @@ const (
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
+	ApiPortEnvVariableName   = "GAUGE_API_PORT"
 	GaugeDebugOptsEnv        = "GAUGE_DEBUG_OPTS" //spefify the debug options to be used while lanching the runner
 )
 
