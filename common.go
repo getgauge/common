@@ -268,11 +268,25 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 	}
 
 	for _, prefix := range pluginInstallPrefixes {
-		if FileExists(path.Join(prefix, pluginName)) {
+		if SubDirectoryExists(prefix, pluginName) {
 			return prefix, nil
 		}
 	}
 	return "", errors.New(fmt.Sprintf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes))
+}
+
+func SubDirectoryExists(pluginDir string, pluginName string) bool {
+	files, err := ioutil.ReadDir(pluginDir)
+	if err != nil {
+		return false
+	}
+
+	for _, f := range files {
+		if f.Name() == pluginName && f.IsDir() {
+			return true
+		}
+	}
+	return false
 }
 
 func getPluginInstallPrefixes() ([]string, error) {

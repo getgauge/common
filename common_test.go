@@ -2,7 +2,7 @@ package common
 
 import (
 	"fmt"
-	. "launchpad.net/gocheck"
+	. "gopkg.in/check.v1"
 	"os"
 	"path/filepath"
 	"strings"
@@ -195,4 +195,14 @@ func (s *MySuite) TestGetProjectRootFromSpecFilePath(c *C) {
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
+}
+
+func (s *MySuite) TestSubDirectoryExists(c *C) {
+	rootDir, _ := filepath.Abs(filepath.Join(dummyProject))
+
+	specsExists := SubDirectoryExists(rootDir, "specs")
+	fooExists := SubDirectoryExists(rootDir, "foo")
+
+	c.Assert(specsExists, Equals, true)
+	c.Assert(fooExists, Equals, false)
 }
