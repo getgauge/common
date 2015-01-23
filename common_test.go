@@ -21,7 +21,7 @@ var _ = Suite(&MySuite{})
 
 func (s *MySuite) SetUpSuite(c *C) {
 	cwd, _ := os.Getwd()
-	s.testDir, _ = filepath.Abs(cwd)
+	s.testDir = getAbsPath(cwd)
 	createDummyProject(dummyProject)
 }
 
@@ -71,7 +71,7 @@ func createDummyProject(project string) {
 }
 
 func (s *MySuite) TestGetProjectRoot(c *C) {
-	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
+	expectedRoot := getAbsPath(dummyProject)
 	os.Chdir(dummyProject)
 
 	root, err := GetProjectRoot()
@@ -81,7 +81,7 @@ func (s *MySuite) TestGetProjectRoot(c *C) {
 }
 
 func (s *MySuite) TestGetProjectRootFromNestedDir(c *C) {
-	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
+	expectedRoot := getAbsPath(dummyProject)
 	os.Chdir(filepath.Join(dummyProject, "specs", "nested", "deep_nested"))
 
 	root, err := GetProjectRoot()
@@ -205,4 +205,10 @@ func (s *MySuite) TestSubDirectoryExists(c *C) {
 
 	c.Assert(specsExists, Equals, true)
 	c.Assert(fooExists, Equals, false)
+}
+
+func getAbsPath(path string) string {
+	abs, _ := filepath.Abs(path)
+	absPath, _ := filepath.EvalSymlinks(abs)
+	return absPath
 }
