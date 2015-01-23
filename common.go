@@ -62,16 +62,19 @@ type Property struct {
 func GetProjectRoot() (string, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Failed to find project root directory. %s\n", err.Error())
-		os.Exit(2)
+		return "", errors.New(fmt.Sprintf("Failed to find project root directory. %s\n", err.Error()))
 	}
 	return findManifestInPath(pwd)
 }
 func findManifestInPath(pwd string) (string, error) {
+	wd, err := filepath.Abs(pwd)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to find project directory: %s", err))
+	}
 	manifestExists := func(dir string) bool {
 		return FileExists(path.Join(dir, ManifestFile))
 	}
-	dir := pwd
+	dir := wd
 
 	for {
 		if manifestExists(dir) {
