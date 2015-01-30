@@ -573,11 +573,22 @@ func Download(url, targetDir string) (string, error) {
 }
 
 func DownloadToTempDir(url string) (string, error) {
-	tempDir, err := CreateEmptyTempDir()
-	if err != nil {
-		return "", err
+	return Download(url, GetTempDir())
+}
+
+func GetTempDir() string {
+	tempGaugeDir := filepath.Join(os.TempDir(), "gauge_temp")
+	if !exists(tempGaugeDir) {
+		os.MkdirAll(tempGaugeDir, NewDirectoryPermissions)
 	}
-	return Download(url, tempDir)
+	return tempGaugeDir
+}
+
+func exists(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func UnzipArchive(zipFile string) (string, error) {
@@ -757,7 +768,7 @@ func fileExists(url string) bool {
 	if err != nil {
 		return false
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode == 404 {
 		return false
 	}
 	return true
