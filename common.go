@@ -520,7 +520,7 @@ func GetExecutableCommand(command ...string) *exec.Cmd {
 }
 
 func downloadUsingWget(url, targetFile string) error {
-	cmd := GetExecutableCommand("wget", url, "-O", targetFile)
+	cmd := GetExecutableCommand("wget", "--no-check-certificate", url, "-O", targetFile)
 	fmt.Sprintf("Downloading using wget => %s", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -528,7 +528,7 @@ func downloadUsingWget(url, targetFile string) error {
 }
 
 func downloadUsingCurl(url, targetFile string) error {
-	cmd := GetExecutableCommand("curl", "-L", "-o", targetFile, url)
+	cmd := GetExecutableCommand("curl", "-L", "-k", "-o", targetFile, url)
 	fmt.Sprintf("Downloading using curl => %s", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -556,6 +556,10 @@ func Download(url, targetDir string) (string, error) {
 		return "", errors.New(fmt.Sprintf("%s doesn't exists", targetDir))
 	}
 	targetFile := filepath.Join(targetDir, filepath.Base(url))
+
+	if !fileExists(url) {
+		return "", errors.New("File does not exist")
+	}
 
 	if _, err := exec.LookPath(wget); err == nil {
 		return targetFile, downloadUsingWget(url, targetFile)
@@ -746,4 +750,15 @@ func (version1 *version) isGreaterThan(version2 *version) bool {
 
 func (version *version) String() string {
 	return fmt.Sprintf("%d.%d.%d", version.major, version.minor, version.patch)
+}
+
+func fileExists(url string) bool {
+	resp, err := http.Head(url)
+	if err != nil {
+		return false
+	}
+	if resp.StatusCode != 200 {
+		return false
+	}
+	return true
 }
