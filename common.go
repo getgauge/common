@@ -307,7 +307,7 @@ func getPluginInstallPrefixes() ([]string, error) {
 	return prefixes, nil
 }
 
-func GetPrimaryPluginsInstallDir() (string, error) {
+func GetGaugeHomeDirectory() (string, error) {
 	if isWindows() {
 		appDataDir := os.Getenv(appData)
 		if appDataDir == "" {
@@ -319,7 +319,15 @@ func GetPrimaryPluginsInstallDir() (string, error) {
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Failed to find plugin installation path. Could not get User home directory: %s", err))
 	}
-	return filepath.Join(userHome, dotGauge, Plugins), nil
+	return filepath.Join(userHome, dotGauge), nil
+}
+
+func GetPrimaryPluginsInstallDir() (string, error) {
+	gaugeHome, err := GetGaugeHomeDirectory()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(gaugeHome, Plugins), nil
 }
 
 func GetLibsPath() (string, error) {
