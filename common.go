@@ -313,7 +313,7 @@ func GetGaugeHomeDirectory() (string, error) {
 		if appDataDir == "" {
 			return "", errors.New("Failed to find plugin installation path. Could not get APPDATA")
 		}
-		return filepath.Join(appDataDir, ProductName, Plugins), nil
+		return filepath.Join(appDataDir, ProductName), nil
 	}
 	userHome, err := getUserHome()
 	if err != nil {
