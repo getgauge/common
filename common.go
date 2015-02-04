@@ -391,7 +391,6 @@ func DirExists(dirPath string) bool {
 
 // Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
 func MirrorDir(src, dst string) error {
-	log.Printf("Copying '%s' -> '%s'\n", src, dst)
 	err := filepath.Walk(src, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
