@@ -797,7 +797,7 @@ func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, err
 }
 
 func GetGaugePluginVersion(pluginName string) (string, error) {
-	pluginProperties, err := getPluginProperties(fmt.Sprintf("%s.json", pluginName))
+	pluginProperties, err := GetPluginProperties(fmt.Sprintf("%s.json", pluginName))
 	if err != nil {
 		return nil, error(fmt.Sprintf("Failed to get gauge %s properties file. %s", pluginName, err))
 	}
