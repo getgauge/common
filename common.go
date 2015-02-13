@@ -529,7 +529,7 @@ func GetExecutableCommand(command ...string) *exec.Cmd {
 
 func downloadUsingWget(url, targetFile string) error {
 	cmd := GetExecutableCommand("wget", "--no-check-certificate", url, "-O", targetFile)
-	fmt.Sprintf("Downloading using wget => %s", cmd)
+	fmt.Printf("Downloading using wget => %s\n", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -537,14 +537,14 @@ func downloadUsingWget(url, targetFile string) error {
 
 func downloadUsingCurl(url, targetFile string) error {
 	cmd := GetExecutableCommand("curl", "-L", "-k", "-o", targetFile, url)
-	fmt.Sprintf("Downloading using curl => %s", cmd)
+	fmt.Printf("Downloading using curl => %s\n", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func downloadUsingGo(url, targetFile string) error {
-	fmt.Sprintf("Downloading => %s.  This could take a few minutes...", url)
+	fmt.Printf("Downloading => %s.  This could take a few minutes...\n", url)
 	out, err := os.Create(targetFile)
 	if err != nil {
 		return err
