@@ -20,6 +20,7 @@ package common
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/dmotylev/goproperties"
@@ -529,21 +530,39 @@ func SetEnvVariable(key, value string) error {
 }
 
 func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
-	pwd, err := os.Getwd()
+	cmd, pwd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
+	defer os.Chdir(pwd)
 	if err != nil {
 		return nil, err
 	}
-
-	if err := os.Chdir(workingDir); err != nil {
-		return nil, errors.New(fmt.Sprintf("Failed to execute command => %s. %s", command, err))
-	}
-	defer os.Chdir(pwd)
-	cmd := GetExecutableCommand(command...)
-	cmd.Stdout = outputStreamWriter
-	cmd.Stderr = errorStreamWriter
 	err = cmd.Start()
 	return cmd, err
 
+}
+
+func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer, env []string) (*exec.Cmd, error) {
+	cmd, pwd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
+	defer os.Chdir(pwd)
+	if err != nil {
+		return nil, err
+	}
+	cmd.Env = env
+	err = cmd.Start()
+	return cmd, err
+}
+
+func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, string, error) {
+	pwd, err := os.Getwd()
+	if err != nil {
+		return nil, "", err
+	}
+	if err := os.Chdir(workingDir); err != nil {
+		return nil, "", errors.New(fmt.Sprintf("Failed to execute command => %s. %s", command, err))
+	}
+	cmd := GetExecutableCommand(command...)
+	cmd.Stdout = outputStreamWriter
+	cmd.Stderr = errorStreamWriter
+	return cmd, pwd, nil
 }
 
 func GetExecutableCommand(command ...string) *exec.Cmd {
@@ -560,7 +579,7 @@ func GetExecutableCommand(command ...string) *exec.Cmd {
 
 func downloadUsingWget(url, targetFile string) error {
 	cmd := GetExecutableCommand("wget", "--no-check-certificate", url, "-O", targetFile)
-	fmt.Sprintf("Downloading using wget => %s", cmd)
+	fmt.Printf("Downloading using wget => %s\n", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -568,14 +587,14 @@ func downloadUsingWget(url, targetFile string) error {
 
 func downloadUsingCurl(url, targetFile string) error {
 	cmd := GetExecutableCommand("curl", "-L", "-k", "-o", targetFile, url)
-	fmt.Sprintf("Downloading using curl => %s", cmd)
+	fmt.Printf("Downloading using curl => %s\n", cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func downloadUsingGo(url, targetFile string) error {
-	fmt.Sprintf("Downloading => %s.  This could take a few minutes...", url)
+	fmt.Printf("Downloading => %s.  This could take a few minutes...\n", url)
 	out, err := os.Create(targetFile)
 	if err != nil {
 		return err
@@ -811,4 +830,26 @@ func fileExists(url string) bool {
 		return false
 	}
 	return true
+}
+
+func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, error) {
+	pluginPropertiesJson, err := ioutil.ReadFile(jsonPropertiesFile)
+	if err != nil {
+		fmt.Printf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
+		return nil, err
+	}
+	var pluginJson interface{}
+	if err = json.Unmarshal([]byte(pluginPropertiesJson), &pluginJson); err != nil {
+		fmt.Printf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
+		return nil, err
+	}
+	return pluginJson.(map[string]interface{}), nil
+}
+
+func GetGaugePluginVersion(pluginName string) (string, error) {
+	pluginProperties, err := GetPluginProperties(fmt.Sprintf("%s.json", pluginName))
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to get gauge %s properties file. %s", pluginName, err))
+	}
+	return pluginProperties["version"].(string), nil
 }
