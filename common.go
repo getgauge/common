@@ -261,9 +261,17 @@ func GetFileWithJsonExtensionInDir(directory string) (string, error) {
 }
 
 func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
+	LatestVersion, err := getPluginLatestVersion(pluginDir)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(pluginDir, LatestVersion.String()), nil
+}
+
+func getPluginLatestVersion(pluginDir string) (*version, error){
 	files, err := ioutil.ReadDir(pluginDir)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Error listing files in plugin directory %s: %s", pluginDir, err.Error()))
+		return nil, errors.New(fmt.Sprintf("Error listing files in plugin directory %s: %s", pluginDir, err.Error()))
 	}
 	availableVersions := make([]*version, 0)
 
@@ -278,10 +286,18 @@ func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
 	pluginName := filepath.Base(pluginDir)
 
 	if len(availableVersions) < 1 {
-		return "", errors.New(fmt.Sprintf("No valid versions of plugin %s found in %s", pluginName, pluginDir))
+		return nil, errors.New(fmt.Sprintf("No valid versions of plugin %s found in %s", pluginName, pluginDir))
 	}
 	LatestVersion := getLatestVersion(availableVersions)
-	return filepath.Join(pluginDir, LatestVersion.String()), nil
+	return LatestVersion, nil
+}
+
+func GetLatestInstalledPluginVersion(pluginDir string) (string, error) {
+	LatestVersion, err := getPluginLatestVersion(pluginDir)
+	if err != nil {
+		return "", err
+	}
+	return LatestVersion.String(), nil
 }
 
 func GetSkeletonFilePath(filename string) (string, error) {
@@ -309,6 +325,28 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 		}
 	}
 	return "", errors.New(fmt.Sprintf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes))
+}
+
+func GetAllInstalledPluginsWithVersion() ([]string, error) {
+	pluginInstallPrefixes, err := getPluginInstallPrefixes()
+	if err != nil {
+		return nil, err
+	}
+	var allPlugins []string
+	for _, prefix := range pluginInstallPrefixes {
+		files, err := ioutil.ReadDir(prefix)
+		if err != nil {
+			return nil, err
+		}
+		for _, file := range files {
+			latestVersion, err := GetLatestInstalledPluginVersion(prefix + fmt.Sprintf("%c",filepath.Separator) + file.Name())
+			if err != nil {
+				continue
+			}
+			allPlugins = append(allPlugins, file.Name() + " : " + latestVersion)
+		}
+	}
+	return allPlugins, nil
 }
 
 func SubDirectoryExists(pluginDir string, pluginName string) bool {
@@ -853,3 +891,4 @@ func GetGaugePluginVersion(pluginName string) (string, error) {
 	}
 	return pluginProperties["version"].(string), nil
 }
+
