@@ -247,7 +247,7 @@ func GetPluginInstallDir(pluginName, version string) (string, error) {
 
 func GetFileWithJsonExtensionInDir(directory string) (string, error) {
 	files, err := ioutil.ReadDir(directory)
-	if(err != nil){
+	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to read the directory %s: %s", directory, err.Error()))
 	}
 	for _, file := range files {
@@ -268,7 +268,7 @@ func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
 	return filepath.Join(pluginDir, LatestVersion.String()), nil
 }
 
-func getPluginLatestVersion(pluginDir string) (*version, error){
+func getPluginLatestVersion(pluginDir string) (*version, error) {
 	files, err := ioutil.ReadDir(pluginDir)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error listing files in plugin directory %s: %s", pluginDir, err.Error()))
@@ -339,11 +339,17 @@ func GetAllInstalledPluginsWithVersion() ([]string, error) {
 			return nil, err
 		}
 		for _, file := range files {
-			latestVersion, err := GetLatestInstalledPluginVersion(prefix + fmt.Sprintf("%c",filepath.Separator) + file.Name())
+			pluginDir, err := os.Stat(prefix + fmt.Sprintf("%c", filepath.Separator) + file.Name())
 			if err != nil {
 				continue
 			}
-			allPlugins = append(allPlugins, file.Name() + " : " + latestVersion)
+			if pluginDir.IsDir() {
+				latestVersion, err := GetLatestInstalledPluginVersion(prefix + fmt.Sprintf("%c", filepath.Separator) + file.Name())
+				if err != nil {
+					continue
+				}
+				allPlugins = append(allPlugins, file.Name()+" : "+latestVersion)
+			}
 		}
 	}
 	return allPlugins, nil
@@ -891,4 +897,3 @@ func GetGaugePluginVersion(pluginName string) (string, error) {
 	}
 	return pluginProperties["version"].(string), nil
 }
-
