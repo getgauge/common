@@ -328,8 +328,8 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 }
 
 type Plugin struct {
-	name string
-	version version
+	Name string
+	Version version
 }
 
 func GetAllInstalledPluginsWithVersion() (map[string]Plugin, error) {
@@ -356,13 +356,13 @@ func GetAllInstalledPluginsWithVersion() (map[string]Plugin, error) {
 				pluginAdded, repeated := allPlugins[file.Name()]
 				if repeated {
 					availableVersions := make([]*version, 0)
-					availableVersions = append(availableVersions, &pluginAdded.version, latestVersion)
+					availableVersions = append(availableVersions, &pluginAdded.Version, latestVersion)
 					latest := getLatestVersion(availableVersions)
 					if latest == latestVersion {
-						allPlugins[file.Name()] = Plugin{name: file.Name(), version: *latestVersion}
+						allPlugins[file.Name()] = Plugin{Name: file.Name(), Version: *latestVersion}
 					}
 				} else {
-					allPlugins[file.Name()] = Plugin{name: file.Name(), version: *latestVersion}
+					allPlugins[file.Name()] = Plugin{Name: file.Name(), Version: *latestVersion}
 				}
 			}
 		}
