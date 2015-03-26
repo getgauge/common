@@ -327,17 +327,17 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes))
 }
 
-type plugins struct {
+type Plugin struct {
 	name string
 	version version
 }
 
-func GetAllInstalledPluginsWithVersion() (map[string]plugins, error) {
+func GetAllInstalledPluginsWithVersion() (map[string]Plugin, error) {
 	pluginInstallPrefixes, err := getPluginInstallPrefixes()
 	if err != nil {
 		return nil, err
 	}
-	allPlugins := make(map[string]plugins, 0)
+	allPlugins := make(map[string]Plugin, 0)
 	for _, prefix := range pluginInstallPrefixes {
 		files, err := ioutil.ReadDir(prefix)
 		if err != nil {
@@ -359,10 +359,10 @@ func GetAllInstalledPluginsWithVersion() (map[string]plugins, error) {
 					availableVersions = append(availableVersions, &pluginAdded.version, latestVersion)
 					latest := getLatestVersion(availableVersions)
 					if latest == latestVersion {
-						allPlugins[file.Name()] = plugins{name: file.Name(), version: *latestVersion}
+						allPlugins[file.Name()] = Plugin{name: file.Name(), version: *latestVersion}
 					}
 				} else {
-					allPlugins[file.Name()] = plugins{name: file.Name(), version: *latestVersion}
+					allPlugins[file.Name()] = Plugin{name: file.Name(), version: *latestVersion}
 				}
 			}
 		}
