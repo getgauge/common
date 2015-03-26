@@ -292,12 +292,12 @@ func getPluginLatestVersion(pluginDir string) (*version, error) {
 	return LatestVersion, nil
 }
 
-func GetLatestInstalledPluginVersion(pluginDir string) (string, error) {
+func GetLatestInstalledPluginVersion(pluginDir string) (*version, error) {
 	LatestVersion, err := getPluginLatestVersion(pluginDir)
 	if err != nil {
-		return "", err
+		return &version{}, err
 	}
-	return LatestVersion.String(), nil
+	return LatestVersion, nil
 }
 
 func GetSkeletonFilePath(filename string) (string, error) {
@@ -327,12 +327,17 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 	return "", errors.New(fmt.Sprintf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes))
 }
 
-func GetAllInstalledPluginsWithVersion() ([]string, error) {
+type plugins struct {
+	name string
+	version version
+}
+
+func GetAllInstalledPluginsWithVersion() (map[string]plugins, error) {
 	pluginInstallPrefixes, err := getPluginInstallPrefixes()
 	if err != nil {
 		return nil, err
 	}
-	var allPlugins []string
+	allPlugins := make(map[string]plugins, 0)
 	for _, prefix := range pluginInstallPrefixes {
 		files, err := ioutil.ReadDir(prefix)
 		if err != nil {
@@ -348,7 +353,17 @@ func GetAllInstalledPluginsWithVersion() ([]string, error) {
 				if err != nil {
 					continue
 				}
-				allPlugins = append(allPlugins, file.Name()+" : "+latestVersion)
+				pluginAdded, repeated := allPlugins[file.Name()]
+				if repeated {
+					availableVersions := make([]*version, 0)
+					availableVersions = append(availableVersions, &pluginAdded.version, latestVersion)
+					latest := getLatestVersion(availableVersions)
+					if latest == latestVersion {
+						allPlugins[file.Name()] = plugins{name: file.Name(), version: *latestVersion}
+					}
+				} else {
+					allPlugins[file.Name()] = plugins{name: file.Name(), version: *latestVersion}
+				}
 			}
 		}
 	}
