@@ -66,7 +66,7 @@ const (
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
 	ApiPortEnvVariableName   = "GAUGE_API_PORT"
-	GaugeDebugOptsEnv        = "GAUGE_DEBUG_OPTS" //spefify the debug options to be used while lanching the runner
+	GaugeDebugOptsEnv        = "GAUGE_DEBUG_OPTS" //specify the debug options to be used while launching the runner
 )
 
 type Property struct {
@@ -385,18 +385,11 @@ func SubDirectoryExists(pluginDir string, pluginName string) bool {
 }
 
 func getPluginInstallPrefixes() ([]string, error) {
-	prefixes := make([]string, 0)
 	primaryPluginInstallDir, err := GetPrimaryPluginsInstallDir()
 	if err != nil {
 		return nil, err
 	}
-	prefixes = append(prefixes, primaryPluginInstallDir)
-	sharedDir, err := GetSearchPathForSharedFiles()
-	if err != nil {
-		return nil, err
-	}
-	prefixes = append(prefixes, path.Join(sharedDir, Plugins))
-	return prefixes, nil
+	return []string{primaryPluginInstallDir}, nil
 }
 
 func GetGaugeHomeDirectory() (string, error) {
