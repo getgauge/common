@@ -187,16 +187,17 @@ func (s *MySuite) TestAppendingPropertiesToFile(c *C) {
 
 func (s *MySuite) TestGetProjectRootFromSpecPath(c *C) {
 	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
-	os.Chdir(s.testDir)
+	absProjPath, _ := filepath.Abs(dummyProject)
+	os.Chdir(os.TempDir())
 
-	root, err := GetProjectRootFromSpecPath(dummyProject + "/specs/")
+	root, err := GetProjectRootFromSpecPath(absProjPath + "/specs/")
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
 }
 
 func (s *MySuite) TestGetProjectRootGivesErrorWhenProvidedInvalidSpecFilePath(c *C) {
-	os.Chdir(s.testDir)
+	os.Chdir(os.TempDir())
 
 	root, err := GetProjectRootFromSpecPath("/specs/nested/deep_nested/deep_nested.spec")
 
@@ -206,9 +207,10 @@ func (s *MySuite) TestGetProjectRootGivesErrorWhenProvidedInvalidSpecFilePath(c 
 
 func (s *MySuite) TestGetProjectRootFromSpecFilePath(c *C) {
 	expectedRoot, _ := filepath.Abs(filepath.Join(dummyProject))
-	os.Chdir(s.testDir)
+	absProjPath, _ := filepath.Abs(dummyProject)
+	os.Chdir(os.TempDir())
 
-	root, err := GetProjectRootFromSpecPath(dummyProject + "/specs/nested/deep_nested/deep_nested.spec")
+	root, err := GetProjectRootFromSpecPath(absProjPath + "/specs/nested/deep_nested/deep_nested.spec")
 
 	c.Assert(err, IsNil)
 	c.Assert(root, Equals, expectedRoot)
