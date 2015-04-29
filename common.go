@@ -245,21 +245,6 @@ func GetPluginInstallDir(pluginName, version string) (string, error) {
 	return pluginDir, nil
 }
 
-func GetFileWithJsonExtensionInDir(directory string) (string, error) {
-	files, err := ioutil.ReadDir(directory)
-	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to read the directory %s: %s", directory, err.Error()))
-	}
-	for _, file := range files {
-		if file.Mode().IsRegular() {
-			if filepath.Ext(file.Name()) == ".json" {
-				return file.Name(), nil
-			}
-		}
-	}
-	return "", errors.New(fmt.Sprintf("No plugin json file found : %s", err.Error()))
-}
-
 func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
 	LatestVersion, err := getPluginLatestVersion(pluginDir)
 	if err != nil {
@@ -328,7 +313,7 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 }
 
 type Plugin struct {
-	Name string
+	Name    string
 	Version version
 }
 
