@@ -616,7 +616,7 @@ func GetExecutableCommand(command ...string) *exec.Cmd {
 
 func downloadUsingWget(url, targetFile string) error {
 	cmd := GetExecutableCommand("wget", "--no-check-certificate", url, "-O", targetFile)
-	fmt.Printf("Downloading using wget => %s\n", cmd)
+	log.Printf("Downloading using wget => %s\n", cmd.Args)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -624,14 +624,14 @@ func downloadUsingWget(url, targetFile string) error {
 
 func downloadUsingCurl(url, targetFile string) error {
 	cmd := GetExecutableCommand("curl", "-L", "-k", "-o", targetFile, url)
-	fmt.Printf("Downloading using curl => %s\n", cmd)
+	log.Printf("Downloading using curl => %s\n", cmd.Args)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
 func downloadUsingGo(url, targetFile string) error {
-	fmt.Printf("Downloading => %s.  This could take a few minutes...\n", url)
+	log.Printf("Downloading => %s.  This could take a few minutes...\n", url)
 	out, err := os.Create(targetFile)
 	if err != nil {
 		return err
@@ -872,13 +872,11 @@ func fileExists(url string) bool {
 func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, error) {
 	pluginPropertiesJson, err := ioutil.ReadFile(jsonPropertiesFile)
 	if err != nil {
-		fmt.Printf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err))
 	}
 	var pluginJson interface{}
 	if err = json.Unmarshal([]byte(pluginPropertiesJson), &pluginJson); err != nil {
-		fmt.Printf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err))
 	}
 	return pluginJson.(map[string]interface{}), nil
 }
