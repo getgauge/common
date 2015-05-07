@@ -434,9 +434,12 @@ func GetGaugeConfiguration() (properties.Properties, error) {
 }
 
 func ReadFileContents(file string) (string, error) {
+	if !FileExists(file) {
+		return "", errors.New(fmt.Sprintf("File %s doesn't exist.", file))
+	}
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
-		return "", err
+		return "", errors.New(fmt.Sprintf("Failed to read the file %s.", file))
 	}
 
 	return string(bytes), nil
