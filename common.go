@@ -655,8 +655,9 @@ func Download(url, targetDir string) (string, error) {
 	}
 	targetFile := filepath.Join(targetDir, filepath.Base(url))
 
-	if !fileExists(url) {
-		return "", errors.New("File does not exist")
+	fileExist, err := fileExists(url)
+	if !fileExist {
+		return "", err
 	}
 
 	if _, err := exec.LookPath(wget); err == nil {
@@ -861,15 +862,15 @@ func (version *version) String() string {
 	return fmt.Sprintf("%d.%d.%d", version.major, version.minor, version.patch)
 }
 
-func fileExists(url string) bool {
+func fileExists(url string) (bool, error) {
 	resp, err := http.Head(url)
 	if err != nil {
-		return false
+		return false, errors.New("Failed to resolve host.")
 	}
 	if resp.StatusCode == 404 {
-		return false
+		return false, errors.New("File does not exist.")
 	}
-	return true
+	return true, nil
 }
 
 func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, error) {
