@@ -329,12 +329,12 @@ func GetAllInstalledPluginsWithVersion() (map[string]Plugin, error) {
 			return nil, err
 		}
 		for _, file := range files {
-			pluginDir, err := os.Stat(prefix + fmt.Sprintf("%c", filepath.Separator) + file.Name())
+			pluginDir, err := os.Stat(filepath.Join(prefix, file.Name()))
 			if err != nil {
 				continue
 			}
 			if pluginDir.IsDir() {
-				latestVersion, err := GetLatestInstalledPluginVersion(prefix + fmt.Sprintf("%c", filepath.Separator) + file.Name())
+				latestVersion, err := GetLatestInstalledPluginVersion(filepath.Join(prefix, file.Name()))
 				if err != nil {
 					continue
 				}
