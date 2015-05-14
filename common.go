@@ -408,10 +408,6 @@ func GetLibsPath() (string, error) {
 	return filepath.Join(prefix, "lib", ProductName), nil
 }
 
-func IsASupportedLanguage(language string) bool {
-	return IsPluginInstalled(language, "")
-}
-
 func IsPluginInstalled(name, version string) bool {
 	pluginsDir, err := GetPluginsInstallDir(name)
 	if err != nil {
