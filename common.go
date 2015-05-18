@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dmotylev/goproperties"
 	"io"
 	"io/ioutil"
 	"log"
@@ -39,6 +38,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/dmotylev/goproperties"
 )
 
 const (
@@ -598,6 +599,7 @@ func prepareCommand(command []string, workingDir string, outputStreamWriter io.W
 	cmd := GetExecutableCommand(command...)
 	cmd.Stdout = outputStreamWriter
 	cmd.Stderr = errorStreamWriter
+	cmd.Stdin = os.Stdin
 	return cmd, pwd, nil
 }
 
