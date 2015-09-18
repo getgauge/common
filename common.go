@@ -681,6 +681,10 @@ func GetTempDir() string {
 	return tempGaugeDir
 }
 
+func RemoveDir(path string) error {
+	return os.RemoveAll(path)
+}
+
 func exists(path string) bool {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
