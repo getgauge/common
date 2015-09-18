@@ -692,10 +692,7 @@ func UnzipArchive(zipFile string) (string, error) {
 	if !FileExists(zipFile) {
 		return "", errors.New(fmt.Sprintf("ZipFile %s does not exist", zipFile))
 	}
-	dest, err := CreateEmptyTempDir()
-	if err != nil {
-		return "", err
-	}
+	dest := CreateEmptyTempDir()
 
 	r, err := zip.OpenReader(zipFile)
 	if err != nil {
@@ -786,8 +783,8 @@ func isWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
-func CreateEmptyTempDir() (string, error) {
-	return ioutil.TempDir("", fmt.Sprintf("%d", GetUniqueId()))
+func CreateEmptyTempDir() string {
+	return filepath.Join(GetTempDir(), fmt.Sprintf("%d", GetUniqueId()))
 }
 
 func TrimTrailingSpace(str string) string {
