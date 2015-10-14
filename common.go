@@ -587,7 +587,7 @@ func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWrit
 }
 
 func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
-	cmd := GetExecutableCommand(command...)
+	cmd := GetExecutableCommand(false, command...)
 	cmd.Dir = workingDir
 	cmd.Stdout = outputStreamWriter
 	cmd.Stderr = errorStreamWriter
@@ -595,26 +595,30 @@ func prepareCommand(command []string, workingDir string, outputStreamWriter io.W
 	return cmd, nil
 }
 
-func GetExecutableCommand(command ...string) *exec.Cmd {
-	var cmd *exec.Cmd
+func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 	if len(command) == 0 {
 		panic(errors.New("Invalid executable command"))
 	} else if len(command) > 1 {
-		cmd = &exec.Cmd{
+		if isSystemCommand {
+			return exec.Command(command[0], command[1:]...)
+		}
+		return &exec.Cmd{
 			Path: command[0],
-			Args: append([]string{command[0]}, command[1:]...),
+			Args: append([]string{command[0]}),
 		}
 	} else {
-		cmd = &exec.Cmd{
+		if isSystemCommand {
+			return exec.Command(command[0])
+		}
+		return &exec.Cmd{
 			Path: command[0],
 			Args: append([]string{command[0]}),
 		}
 	}
-	return cmd
 }
 
 func downloadUsingWget(url, targetFile string) error {
-	cmd := GetExecutableCommand("wget", "--no-check-certificate", url, "-O", targetFile)
+	cmd := GetExecutableCommand(true, "wget", "--no-check-certificate", url, "-O", targetFile)
 	log.Printf("Downloading using wget => %s\n", cmd.Args)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -622,7 +626,7 @@ func downloadUsingWget(url, targetFile string) error {
 }
 
 func downloadUsingCurl(url, targetFile string) error {
-	cmd := GetExecutableCommand("curl", "-L", "-k", "-o", targetFile, url)
+	cmd := GetExecutableCommand(true, "curl", "-L", "-k", "-o", targetFile, url)
 	log.Printf("Downloading using curl => %s\n", cmd.Args)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
