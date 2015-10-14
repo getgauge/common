@@ -567,8 +567,7 @@ func SetEnvVariable(key, value string) error {
 }
 
 func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
-	cmd, pwd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
-	defer os.Chdir(pwd)
+	cmd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
 	if err != nil {
 		return nil, err
 	}
@@ -578,8 +577,7 @@ func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.W
 }
 
 func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer, env []string) (*exec.Cmd, error) {
-	cmd, pwd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
-	defer os.Chdir(pwd)
+	cmd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
 	if err != nil {
 		return nil, err
 	}
@@ -588,19 +586,13 @@ func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWrit
 	return cmd, err
 }
 
-func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, string, error) {
-	pwd, err := os.Getwd()
-	if err != nil {
-		return nil, "", err
-	}
-	if err := os.Chdir(workingDir); err != nil {
-		return nil, "", errors.New(fmt.Sprintf("Failed to execute command => %s. %s", command, err))
-	}
+func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
 	cmd := GetExecutableCommand(command...)
+	cmd.Dir = workingDir
 	cmd.Stdout = outputStreamWriter
 	cmd.Stderr = errorStreamWriter
 	cmd.Stdin = os.Stdin
-	return cmd, pwd, nil
+	return cmd, nil
 }
 
 func GetExecutableCommand(command ...string) *exec.Cmd {
