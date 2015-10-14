@@ -600,9 +600,15 @@ func GetExecutableCommand(command ...string) *exec.Cmd {
 	if len(command) == 0 {
 		panic(errors.New("Invalid executable command"))
 	} else if len(command) > 1 {
-		cmd = exec.Command(command[0], command[1:]...)
+		cmd = &exec.Cmd{
+			Path: command[0],
+			Args: append([]string{command[0]}, command[1:]...),
+		}
 	} else {
-		cmd = exec.Command(command[0])
+		cmd = &exec.Cmd{
+			Path: command[0],
+			Args: append([]string{command[0]}),
+		}
 	}
 	return cmd
 }
