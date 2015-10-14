@@ -604,7 +604,7 @@ func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 		}
 		return &exec.Cmd{
 			Path: command[0],
-			Args: append([]string{command[0]}),
+			Args: append([]string{command[0]}, command[1:]...),
 		}
 	} else {
 		if isSystemCommand {
