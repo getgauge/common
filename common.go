@@ -598,23 +598,20 @@ func prepareCommand(command []string, workingDir string, outputStreamWriter io.W
 func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 	if len(command) == 0 {
 		panic(errors.New("Invalid executable command"))
-	} else if len(command) > 1 {
+	}
+	cmd := &exec.Cmd{Path: command[0]}
+	if len(command) > 1 {
 		if isSystemCommand {
-			return exec.Command(command[0], command[1:]...)
+			cmd = exec.Command(command[0], command[1:]...)
 		}
-		return &exec.Cmd{
-			Path: command[0],
-			Args: append([]string{command[0]}, command[1:]...),
-		}
+		cmd.Args = append([]string{command[0]}, command[1:]...)
 	} else {
 		if isSystemCommand {
-			return exec.Command(command[0])
+			cmd = exec.Command(command[0])
 		}
-		return &exec.Cmd{
-			Path: command[0],
-			Args: append([]string{command[0]}),
-		}
+		cmd.Args = append([]string{command[0]})
 	}
+	return cmd
 }
 
 func downloadUsingWget(url, targetFile string) error {
