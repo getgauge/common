@@ -21,6 +21,7 @@ import (
 	"fmt"
 	. "gopkg.in/check.v1"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -277,6 +278,20 @@ func (s *MySuite) TestGetExecutableCommandForCommandsWithPath(c *C) {
 	c.Assert(logger2.equals(cmd.Stderr.(logger)), Equals, true)
 	c.Assert(args["-v"], Equals, true)
 	c.Assert(args["-d"], Equals, true)
+}
+
+func (s *MySuite) TestGetExecutableCommandForSystemCommands(c *C) {
+	wd, _ := os.Getwd()
+
+	command := "go"
+	cmd := GetExecutableCommand(true, command)
+
+	pd, _ := os.Getwd()
+	expectedCommand := exec.Command("go")
+
+	c.Assert(wd, Equals, pd)
+	c.Assert(cmd, NotNil)
+	c.Assert(cmd.Path, Equals, expectedCommand.Path)
 }
 
 func getAbsPath(path string) string {
