@@ -226,8 +226,77 @@ func (s *MySuite) TestSubDirectoryExists(c *C) {
 	c.Assert(fooExists, Equals, false)
 }
 
+func (s *MySuite) TestGetExecutableCommand(c *C) {
+	wd, _ := os.Getwd()
+	workingDirectory := "/working/directory"
+	logger1 := createLogger("logger1")
+	logger2 := createLogger("logger2")
+	command := "gauge"
+
+	cmd, err := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
+
+	pd, _ := os.Getwd()
+	args := make(map[string]bool)
+	for _, v := range cmd.Args {
+		args[v] = true
+	}
+
+	c.Assert(wd, Equals, pd)
+	c.Assert(err, Equals, nil)
+	c.Assert(cmd, NotNil)
+	c.Assert(cmd.Path, Equals, command)
+	c.Assert(cmd.Dir, Equals, workingDirectory)
+	c.Assert(logger1.equals(cmd.Stdout.(logger)), Equals, true)
+	c.Assert(logger2.equals(cmd.Stderr.(logger)), Equals, true)
+	c.Assert(args["-v"], Equals, true)
+	c.Assert(args["-d"], Equals, true)
+}
+
+func (s *MySuite) TestGetExecutableCommandForCommandsWithPath(c *C) {
+	wd, _ := os.Getwd()
+
+	workingDirectory := "/working/directory"
+	logger1 := createLogger("logger1")
+	logger2 := createLogger("logger2")
+	command := "/bin/java"
+
+	cmd, err := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
+
+	pd, _ := os.Getwd()
+	args := make(map[string]bool)
+	for _, v := range cmd.Args {
+		args[v] = true
+	}
+
+	c.Assert(wd, Equals, pd)
+	c.Assert(err, Equals, nil)
+	c.Assert(cmd, NotNil)
+	c.Assert(cmd.Path, Equals, command)
+	c.Assert(cmd.Dir, Equals, workingDirectory)
+	c.Assert(logger1.equals(cmd.Stdout.(logger)), Equals, true)
+	c.Assert(logger2.equals(cmd.Stderr.(logger)), Equals, true)
+	c.Assert(args["-v"], Equals, true)
+	c.Assert(args["-d"], Equals, true)
+}
+
 func getAbsPath(path string) string {
 	abs, _ := filepath.Abs(path)
 	absPath, _ := filepath.EvalSymlinks(abs)
 	return absPath
+}
+
+type logger struct {
+	name string
+}
+
+func (l logger) Write(b []byte) (n int, err error) {
+	return 1, nil
+}
+
+func createLogger(name string) logger {
+	return logger{name}
+}
+
+func (l logger) equals(l1 logger) bool {
+	return l.name == l1.name
 }
