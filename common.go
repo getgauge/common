@@ -55,8 +55,6 @@ const (
 	SpecsDirectoryName      = "specs"
 	ConceptFileExtension    = ".cpt"
 	Plugins                 = "plugins"
-	wget                    = "wget"
-	curl                    = "curl"
 	appData                 = "APPDATA"
 	gaugePropertiesFile     = "gauge.properties"
 )
@@ -614,22 +612,6 @@ func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 	return cmd
 }
 
-func downloadUsingWget(url, targetFile string) error {
-	cmd := GetExecutableCommand(true, "wget", "--no-check-certificate", url, "-O", targetFile)
-	log.Printf("Downloading using wget => %s\n", cmd.Args)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-func downloadUsingCurl(url, targetFile string) error {
-	cmd := GetExecutableCommand(true, "curl", "-L", "-k", "-o", targetFile, url)
-	log.Printf("Downloading using curl => %s\n", cmd.Args)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func downloadUsingGo(url, targetFile string) error {
 	log.Printf("Downloading => %s.  This could take a few minutes...\n", url)
 	out, err := os.Create(targetFile)
@@ -655,14 +637,6 @@ func Download(url, targetDir string) (string, error) {
 	fileExist, err := fileExists(url)
 	if !fileExist {
 		return "", err
-	}
-
-	if _, err := exec.LookPath(wget); err == nil {
-		return targetFile, downloadUsingWget(url, targetFile)
-	}
-
-	if _, err := exec.LookPath(curl); err == nil {
-		return targetFile, downloadUsingCurl(url, targetFile)
 	}
 
 	return targetFile, downloadUsingGo(url, targetFile)
