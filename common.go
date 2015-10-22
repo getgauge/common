@@ -318,7 +318,7 @@ type Plugin struct {
 	Version version
 }
 
-func GetAllInstalledPluginsWithVersion() (map[string]Plugin, error) {
+func GetAllInstalledPluginsWithVersion() ([]Plugin, error) {
 	pluginInstallPrefixes, err := getPluginInstallPrefixes()
 	if err != nil {
 		return nil, err
@@ -353,7 +353,23 @@ func GetAllInstalledPluginsWithVersion() (map[string]Plugin, error) {
 			}
 		}
 	}
-	return allPlugins, nil
+	return sortPlugins(allPlugins), nil
+}
+
+type ByPluginName []Plugin
+
+func (a ByPluginName) Len() int      { return len(a) }
+func (a ByPluginName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByPluginName) Less(i, j int) bool {
+	return a[i].Name < a[j].Name
+}
+func sortPlugins(allPlugins map[string]Plugin) []Plugin {
+	installedPlugins := make([]Plugin, 0)
+	for _, plugin := range allPlugins {
+		installedPlugins = append(installedPlugins, plugin)
+	}
+	sort.Sort(ByPluginName(installedPlugins))
+	return installedPlugins
 }
 
 func SubDirectoryExists(pluginDir string, pluginName string) bool {

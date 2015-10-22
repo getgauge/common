@@ -294,6 +294,29 @@ func (s *MySuite) TestGetExecutableCommandForSystemCommands(c *C) {
 	c.Assert(cmd.Path, Equals, expectedCommand.Path)
 }
 
+func (s *MySuite) TestSortingOfPlugins(c *C) {
+	plugins := make(map[string]Plugin)
+	plugins["e"] = Plugin{Name: "e"}
+	plugins["b"] = Plugin{Name: "b"}
+	plugins["c"] = Plugin{Name: "c"}
+	plugins["d"] = Plugin{Name: "d"}
+	plugins["a"] = Plugin{Name: "a"}
+
+	actual := sortPlugins(plugins)
+
+	expected := make([]Plugin, 0)
+	expected = append(expected, Plugin{Name: "a"})
+	expected = append(expected, Plugin{Name: "b"})
+	expected = append(expected, Plugin{Name: "c"})
+	expected = append(expected, Plugin{Name: "d"})
+	expected = append(expected, Plugin{Name: "e"})
+
+	c.Assert(len(expected), Equals, len(plugins))
+	for i, _ := range expected {
+		c.Assert(expected[i], Equals, actual[i])
+	}
+}
+
 func getAbsPath(path string) string {
 	abs, _ := filepath.Abs(path)
 	absPath, _ := filepath.EvalSymlinks(abs)
