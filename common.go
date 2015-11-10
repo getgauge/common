@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with getgauge/common.  If not, see <http://www.gnu.org/licenses/>.
 
-// Common functions shared across all files
+// Package common functions shared across all files
 package common
 
 import (
 	"archive/zip"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -44,7 +43,7 @@ import (
 
 const (
 	ManifestFile            = "manifest.json"
-	PluginJsonFile          = "plugin.json"
+	PluginJSONFile          = "plugin.json"
 	NewDirectoryPermissions = 0755
 	NewFilePermissions      = 0644
 	DefaultEnvFileName      = "default.properties"
@@ -66,7 +65,7 @@ const (
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
-	ApiPortEnvVariableName   = "GAUGE_API_PORT"
+	APIPortEnvVariableName   = "GAUGE_API_PORT"
 	GaugeDebugOptsEnv        = "GAUGE_DEBUG_OPTS" //specify the debug options to be used while launching the runner
 )
 
@@ -81,14 +80,14 @@ type Property struct {
 func GetProjectRoot() (string, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Failed to find project root directory. %s\n", err.Error()))
+		return "", fmt.Errorf("Failed to find project root directory. %s\n", err.Error())
 	}
 	return findManifestInPath(pwd)
 }
 func findManifestInPath(pwd string) (string, error) {
 	wd, err := filepath.Abs(pwd)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Failed to find project directory: %s", err))
+		return "", fmt.Errorf("Failed to find project directory: %s", err)
 	}
 	manifestExists := func(dir string) bool {
 		return FileExists(path.Join(dir, ManifestFile))
@@ -100,17 +99,14 @@ func findManifestInPath(pwd string) (string, error) {
 			return dir, nil
 		}
 		if dir == filepath.Clean(fmt.Sprintf("%c", os.PathSeparator)) || dir == "" {
-			return "", errors.New("Failed to find project directory")
+			return "", fmt.Errorf("Failed to find project directory")
 		}
 		oldDir := dir
 		dir = filepath.Clean(fmt.Sprintf("%s%c..", dir, os.PathSeparator))
 		if dir == oldDir {
-			return "", errors.New("Failed to find project directory")
+			return "", fmt.Errorf("Failed to find project directory")
 		}
-
 	}
-	return "", errors.New("Failed to find project directory")
-
 }
 
 func GetDirInProject(dirName string, specPath string) (string, error) {
@@ -120,7 +116,7 @@ func GetDirInProject(dirName string, specPath string) (string, error) {
 	}
 	requiredDir := filepath.Join(projectRoot, dirName)
 	if !DirExists(requiredDir) {
-		return "", errors.New(fmt.Sprintf("Could not find %s directory. %s does not exist", dirName, requiredDir))
+		return "", fmt.Errorf("Could not find %s directory. %s does not exist", dirName, requiredDir)
 	}
 
 	return requiredDir, nil
@@ -132,7 +128,7 @@ func GetProjectRootFromSpecPath(specPath string) (string, error) {
 		dir, _ := path.Split(specPath)
 		fullPath, pathErr := filepath.Abs(dir)
 		if pathErr != nil {
-			return "", errors.New(fmt.Sprintf("Unable to get absolute path to specifications. %s", err))
+			return "", fmt.Errorf("Unable to get absolute path to specifications. %s", err)
 		}
 		return findManifestInPath(fullPath)
 	}
@@ -146,7 +142,7 @@ func GetDefaultPropertiesFile() (string, error) {
 	}
 	defaultEnvFile := filepath.Join(envDir, DefaultEnvDir, DefaultEnvFileName)
 	if !FileExists(defaultEnvFile) {
-		return "", errors.New(fmt.Sprintf("Default environment file does not exist: %s \n", defaultEnvFile))
+		return "", fmt.Errorf("Default environment file does not exist: %s \n", defaultEnvFile)
 	}
 	return defaultEnvFile, nil
 }
@@ -163,7 +159,7 @@ func AppendProperties(propertiesFile string, properties ...*Property) error {
 }
 
 func FindFilesInDir(dirPath string, isValidFile func(path string) bool) []string {
-	files := make([]string, 0)
+	var files []string
 	filepath.Walk(dirPath, func(path string, f os.FileInfo, err error) error {
 		if err == nil && !f.IsDir() && isValidFile(path) {
 			files = append(files, path)
@@ -184,7 +180,7 @@ func GetInstallationPrefix() (string, error) {
 	if isWindows() {
 		programFilesPath := os.Getenv("PROGRAMFILES")
 		if programFilesPath == "" {
-			return "", errors.New("Cannot locate gauge shared file. Could not find Program Files directory.")
+			return "", fmt.Errorf("Cannot locate gauge shared file. Could not find Program Files directory.")
 		}
 		possibleInstallationPrefixes = []string{filepath.Join(programFilesPath, ProductName)}
 	} else {
@@ -197,7 +193,7 @@ func GetInstallationPrefix() (string, error) {
 		}
 	}
 
-	return "", errors.New("Can't find installation files")
+	return "", fmt.Errorf("Can't find installation files")
 }
 
 func ExecutableName() string {
@@ -211,9 +207,8 @@ func GetSearchPathForSharedFiles() (string, error) {
 	installationPrefix, err := GetInstallationPrefix()
 	if err != nil {
 		return "", err
-	} else {
-		return filepath.Join(installationPrefix, "share", ProductName), nil
 	}
+	return filepath.Join(installationPrefix, "share", ProductName), nil
 }
 
 func GetLanguageJSONFilePath(language string) (string, error) {
@@ -221,12 +216,12 @@ func GetLanguageJSONFilePath(language string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	languageJson := filepath.Join(languageInstallDir, fmt.Sprintf("%s.json", language))
-	if !FileExists(languageJson) {
-		return "", errors.New(fmt.Sprintf("Failed to find the implementation for: %s. %s does not exist.", language, languageJson))
+	languageJSON := filepath.Join(languageInstallDir, fmt.Sprintf("%s.json", language))
+	if !FileExists(languageJSON) {
+		return "", fmt.Errorf("Failed to find the implementation for: %s. %s does not exist.", language, languageJSON)
 	}
 
-	return languageJson, nil
+	return languageJSON, nil
 }
 
 func GetPluginInstallDir(pluginName, version string) (string, error) {
@@ -257,7 +252,7 @@ func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
 func getPluginLatestVersion(pluginDir string) (*version, error) {
 	files, err := ioutil.ReadDir(pluginDir)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error listing files in plugin directory %s: %s", pluginDir, err.Error()))
+		return nil, fmt.Errorf("Error listing files in plugin directory %s: %s", pluginDir, err.Error())
 	}
 	availableVersions := make([]*version, 0)
 
@@ -272,7 +267,7 @@ func getPluginLatestVersion(pluginDir string) (*version, error) {
 	pluginName := filepath.Base(pluginDir)
 
 	if len(availableVersions) < 1 {
-		return nil, errors.New(fmt.Sprintf("No valid versions of plugin %s found in %s", pluginName, pluginDir))
+		return nil, fmt.Errorf("No valid versions of plugin %s found in %s", pluginName, pluginDir)
 	}
 	LatestVersion := getLatestVersion(availableVersions)
 	return LatestVersion, nil
@@ -296,7 +291,7 @@ func GetSkeletonFilePath(filename string) (string, error) {
 		return skelFile, nil
 	}
 
-	return "", errors.New(fmt.Sprintf("Failed to find the skeleton file: %s", filename))
+	return "", fmt.Errorf("Failed to find the skeleton file: %s", filename)
 }
 
 func GetPluginsInstallDir(pluginName string) (string, error) {
@@ -310,7 +305,7 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 			return prefix, nil
 		}
 	}
-	return "", errors.New(fmt.Sprintf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes))
+	return "", fmt.Errorf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes)
 }
 
 type Plugin struct {
@@ -341,7 +336,7 @@ func GetAllInstalledPluginsWithVersion() ([]Plugin, error) {
 				}
 				pluginAdded, repeated := allPlugins[file.Name()]
 				if repeated {
-					availableVersions := make([]*version, 0)
+					var availableVersions []*version
 					availableVersions = append(availableVersions, &pluginAdded.Version, latestVersion)
 					latest := getLatestVersion(availableVersions)
 					if latest == latestVersion {
@@ -364,7 +359,7 @@ func (a ByPluginName) Less(i, j int) bool {
 	return a[i].Name < a[j].Name
 }
 func sortPlugins(allPlugins map[string]Plugin) []Plugin {
-	installedPlugins := make([]Plugin, 0)
+	var installedPlugins []Plugin
 	for _, plugin := range allPlugins {
 		installedPlugins = append(installedPlugins, plugin)
 	}
@@ -398,13 +393,13 @@ func GetGaugeHomeDirectory() (string, error) {
 	if isWindows() {
 		appDataDir := os.Getenv(appData)
 		if appDataDir == "" {
-			return "", errors.New("Failed to find plugin installation path. Could not get APPDATA")
+			return "", fmt.Errorf("Failed to find plugin installation path. Could not get APPDATA")
 		}
 		return filepath.Join(appDataDir, ProductName), nil
 	}
 	userHome, err := getUserHome()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Failed to find plugin installation path. Could not get User home directory: %s", err))
+		return "", fmt.Errorf("Failed to find plugin installation path. Could not get User home directory: %s", err)
 	}
 	return filepath.Join(userHome, dotGauge), nil
 }
@@ -448,11 +443,11 @@ func GetGaugeConfiguration() (properties.Properties, error) {
 
 func ReadFileContents(file string) (string, error) {
 	if !FileExists(file) {
-		return "", errors.New(fmt.Sprintf("File %s doesn't exist.", file))
+		return "", fmt.Errorf("File %s doesn't exist.", file)
 	}
 	bytes, err := ioutil.ReadFile(file)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Failed to read the file %s.", file))
+		return "", fmt.Errorf("Failed to read the file %s.", file)
 	}
 
 	return string(bytes), nil
@@ -548,13 +543,13 @@ func isExecMode(mode os.FileMode) bool {
 	return (mode & 0111) != 0
 }
 
-func GetUniqueId() int64 {
+func GetUniqueID() int64 {
 	return time.Now().UnixNano()
 }
 
 func CopyFile(src, dest string) error {
 	if !FileExists(src) {
-		return errors.New(fmt.Sprintf("%s doesn't exist", src))
+		return fmt.Errorf("%s doesn't exist", src)
 	}
 
 	b, err := ioutil.ReadFile(src)
@@ -577,7 +572,7 @@ func SetEnvVariable(key, value string) error {
 	}
 	err := os.Setenv(key, value)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed to set: %s = %s. %s", key, value, err.Error()))
+		return fmt.Errorf("Failed to set: %s = %s. %s", key, value, err.Error())
 	}
 	return nil
 }
@@ -613,7 +608,7 @@ func prepareCommand(command []string, workingDir string, outputStreamWriter io.W
 
 func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 	if len(command) == 0 {
-		panic(errors.New("Invalid executable command"))
+		panic(fmt.Errorf("Invalid executable command"))
 	}
 	cmd := &exec.Cmd{Path: command[0]}
 	if len(command) > 1 {
@@ -664,7 +659,7 @@ func downloadUsingGo(url, targetFile string) error {
 
 func Download(url, targetDir string) (string, error) {
 	if !DirExists(targetDir) {
-		return "", errors.New(fmt.Sprintf("%s doesn't exists", targetDir))
+		return "", fmt.Errorf("%s doesn't exists", targetDir)
 	}
 	targetFile := filepath.Join(targetDir, filepath.Base(url))
 
@@ -709,7 +704,7 @@ func exists(path string) bool {
 
 func UnzipArchive(zipFile string) (string, error) {
 	if !FileExists(zipFile) {
-		return "", errors.New(fmt.Sprintf("ZipFile %s does not exist", zipFile))
+		return "", fmt.Errorf("ZipFile %s does not exist", zipFile)
 	}
 	dest := CreateEmptyTempDir()
 
@@ -759,16 +754,16 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 	backupFile := ""
 	if takeBackup {
 		tmpDir := os.TempDir()
-		fileName := fmt.Sprintf("%s_%v", filepath.Base(filePath), GetUniqueId())
+		fileName := fmt.Sprintf("%s_%v", filepath.Base(filePath), GetUniqueID())
 		backupFile = filepath.Join(tmpDir, fileName)
 		err := CopyFile(filePath, backupFile)
 		if err != nil {
-			return errors.New(fmt.Sprintf("Failed to make backup for '%s': %s", filePath, err.Error()))
+			return fmt.Errorf("Failed to make backup for '%s': %s", filePath, err.Error())
 		}
 	}
 	err := ioutil.WriteFile(filePath, []byte(contents), NewFilePermissions)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Failed to write to '%s': %s", filePath, err.Error()))
+		return fmt.Errorf("Failed to write to '%s': %s", filePath, err.Error())
 	}
 
 	return nil
@@ -780,9 +775,8 @@ func getUserHome() (string, error) {
 		homeFromEnv := getUserHomeFromEnv()
 		if homeFromEnv != "" {
 			return homeFromEnv, nil
-		} else {
-			return "", errors.New("Could not get the home directory")
 		}
+		return "", fmt.Errorf("Could not get the home directory")
 	}
 	return usr.HomeDir, nil
 }
@@ -803,7 +797,7 @@ func isWindows() bool {
 }
 
 func CreateEmptyTempDir() string {
-	return filepath.Join(GetTempDir(), fmt.Sprintf("%d", GetUniqueId()))
+	return filepath.Join(GetTempDir(), fmt.Sprintf("%d", GetUniqueID()))
 }
 
 func TrimTrailingSpace(str string) string {
@@ -824,19 +818,19 @@ type version struct {
 func parseVersion(versionText string) (*version, error) {
 	splits := strings.Split(versionText, ".")
 	if len(splits) != 3 {
-		return nil, errors.New("Incorrect number of '.' characters in Version. Version should be of the form 1.5.7")
+		return nil, fmt.Errorf("Incorrect number of '.' characters in Version. Version should be of the form 1.5.7")
 	}
 	major, err := strconv.Atoi(splits[0])
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error parsing major version number %s to integer. %s", splits[0], err.Error()))
+		return nil, fmt.Errorf("Error parsing major version number %s to integer. %s", splits[0], err.Error())
 	}
 	minor, err := strconv.Atoi(splits[1])
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error parsing minor version number %s to integer. %s", splits[0], err.Error()))
+		return nil, fmt.Errorf("Error parsing minor version number %s to integer. %s", splits[0], err.Error())
 	}
 	patch, err := strconv.Atoi(splits[2])
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error parsing patch version number %s to integer. %s", splits[0], err.Error()))
+		return nil, fmt.Errorf("Error parsing patch version number %s to integer. %s", splits[0], err.Error())
 	}
 
 	return &version{major, minor, patch}, nil
@@ -864,9 +858,8 @@ func (version1 *version) isGreaterThan(version2 *version) bool {
 		} else if version1.minor == version2.minor {
 			if version1.patch > version2.patch {
 				return true
-			} else {
-				return false
 			}
+			return false
 		}
 	}
 	return false
@@ -879,30 +872,30 @@ func (version *version) String() string {
 func fileExists(url string) (bool, error) {
 	resp, err := http.Head(url)
 	if err != nil {
-		return false, errors.New("Failed to resolve host.")
+		return false, fmt.Errorf("Failed to resolve host.")
 	}
 	if resp.StatusCode == 404 {
-		return false, errors.New("File does not exist.")
+		return false, fmt.Errorf("File does not exist.")
 	}
 	return true, nil
 }
 
 func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, error) {
-	pluginPropertiesJson, err := ioutil.ReadFile(jsonPropertiesFile)
+	pluginPropertiesJSON, err := ioutil.ReadFile(jsonPropertiesFile)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err))
+		return nil, fmt.Errorf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
 	}
-	var pluginJson interface{}
-	if err = json.Unmarshal([]byte(pluginPropertiesJson), &pluginJson); err != nil {
-		return nil, errors.New(fmt.Sprintf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err))
+	var pluginJSON interface{}
+	if err = json.Unmarshal([]byte(pluginPropertiesJSON), &pluginJSON); err != nil {
+		return nil, fmt.Errorf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
 	}
-	return pluginJson.(map[string]interface{}), nil
+	return pluginJSON.(map[string]interface{}), nil
 }
 
 func GetGaugePluginVersion(pluginName string) (string, error) {
 	pluginProperties, err := GetPluginProperties(fmt.Sprintf("%s.json", pluginName))
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Failed to get gauge %s properties file. %s", pluginName, err))
+		return "", fmt.Errorf("Failed to get gauge %s properties file. %s", pluginName, err)
 	}
 	return pluginProperties["version"].(string), nil
 }
