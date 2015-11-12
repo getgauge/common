@@ -471,7 +471,8 @@ func DirExists(dirPath string) bool {
 }
 
 // Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
-func MirrorDir(src, dst string) error {
+func MirrorDir(src, dst string) ([]string, error) {
+	var filesAdded []string
 	err := filepath.Walk(src, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -483,9 +484,12 @@ func MirrorDir(src, dst string) error {
 		if err != nil {
 			return fmt.Errorf("Failed to find Rel(%q, %q): %v", src, path, err)
 		}
-		return MirrorFile(path, filepath.Join(dst, suffix))
+
+		err = MirrorFile(path, filepath.Join(dst, suffix))
+		filesAdded = append(filesAdded, suffix)
+		return err
 	})
-	return err
+	return filesAdded, err
 }
 
 // Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
@@ -691,7 +695,7 @@ func GetTempDir() string {
 	return tempGaugeDir
 }
 
-func RemoveDir(path string) error {
+func Remove(path string) error {
 	return os.RemoveAll(path)
 }
 
