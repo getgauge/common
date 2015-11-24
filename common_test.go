@@ -234,7 +234,7 @@ func (s *MySuite) TestGetExecutableCommand(c *C) {
 	logger2 := createLogger("logger2")
 	command := "gauge"
 
-	cmd, err := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
+	cmd := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
 
 	pd, _ := os.Getwd()
 	args := make(map[string]bool)
@@ -243,7 +243,6 @@ func (s *MySuite) TestGetExecutableCommand(c *C) {
 	}
 
 	c.Assert(wd, Equals, pd)
-	c.Assert(err, Equals, nil)
 	c.Assert(cmd, NotNil)
 	c.Assert(cmd.Path, Equals, command)
 	c.Assert(cmd.Dir, Equals, workingDirectory)
@@ -261,7 +260,7 @@ func (s *MySuite) TestGetExecutableCommandForCommandsWithPath(c *C) {
 	logger2 := createLogger("logger2")
 	command := "/bin/java"
 
-	cmd, err := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
+	cmd := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
 
 	pd, _ := os.Getwd()
 	args := make(map[string]bool)
@@ -270,7 +269,6 @@ func (s *MySuite) TestGetExecutableCommandForCommandsWithPath(c *C) {
 	}
 
 	c.Assert(wd, Equals, pd)
-	c.Assert(err, Equals, nil)
 	c.Assert(cmd, NotNil)
 	c.Assert(cmd.Path, Equals, command)
 	c.Assert(cmd.Dir, Equals, workingDirectory)

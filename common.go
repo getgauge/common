@@ -580,32 +580,36 @@ func SetEnvVariable(key, value string) error {
 }
 
 func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
-	cmd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
-	if err != nil {
-		return nil, err
-	}
-	err = cmd.Start()
+	cmd := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
+	err := cmd.Start()
 	return cmd, err
 
+}
+
+func ExecuteSystemCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
+	cmd := GetExecutableCommand(true, command...)
+	cmd.Dir = workingDir
+	cmd.Stdout = outputStreamWriter
+	cmd.Stderr = errorStreamWriter
+	cmd.Stdin = os.Stdin
+	err := cmd.Start()
+	return cmd, err
 }
 
 func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer, env []string) (*exec.Cmd, error) {
-	cmd, err := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
-	if err != nil {
-		return nil, err
-	}
+	cmd := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
 	cmd.Env = env
-	err = cmd.Start()
+	err := cmd.Start()
 	return cmd, err
 }
 
-func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
+func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) *exec.Cmd {
 	cmd := GetExecutableCommand(false, command...)
 	cmd.Dir = workingDir
 	cmd.Stdout = outputStreamWriter
 	cmd.Stderr = errorStreamWriter
 	cmd.Stdin = os.Stdin
-	return cmd, nil
+	return cmd
 }
 
 func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
