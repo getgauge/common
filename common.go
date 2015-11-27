@@ -653,7 +653,7 @@ func Download(url, targetDir string) (string, error) {
 	}
 	targetFile := filepath.Join(targetDir, filepath.Base(url))
 
-	fileExist, err := fileExists(url)
+	fileExist, err := UrlExists(url)
 	if !fileExist {
 		return "", err
 	}
@@ -851,7 +851,7 @@ func (version *version) String() string {
 	return fmt.Sprintf("%d.%d.%d", version.major, version.minor, version.patch)
 }
 
-func fileExists(url string) (bool, error) {
+func UrlExists(url string) (bool, error) {
 	resp, err := http.Head(url)
 	if err != nil {
 		return false, fmt.Errorf("Failed to resolve host.")
