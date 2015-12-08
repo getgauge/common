@@ -632,7 +632,6 @@ func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 }
 
 func downloadUsingGo(url, targetFile string) error {
-	log.Printf("Downloading => %s.  This could take a few minutes...\n", url)
 	out, err := os.Create(targetFile)
 	if err != nil {
 		return err
