@@ -33,7 +33,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -209,76 +208,6 @@ func GetSearchPathForSharedFiles() (string, error) {
 	return filepath.Join(installationPrefix, "share", ProductName), nil
 }
 
-func GetLanguageJSONFilePath(language string) (string, error) {
-	languageInstallDir, err := GetPluginInstallDir(language, "")
-	if err != nil {
-		return "", err
-	}
-	languageJSON := filepath.Join(languageInstallDir, fmt.Sprintf("%s.json", language))
-	if !FileExists(languageJSON) {
-		return "", fmt.Errorf("Failed to find the implementation for: %s. %s does not exist.", language, languageJSON)
-	}
-
-	return languageJSON, nil
-}
-
-func GetPluginInstallDir(pluginName, version string) (string, error) {
-	allPluginsInstallDir, err := GetPluginsInstallDir(pluginName)
-	if err != nil {
-		return "", err
-	}
-	pluginDir := path.Join(allPluginsInstallDir, pluginName)
-	if version != "" {
-		pluginDir = filepath.Join(pluginDir, version)
-	} else {
-		pluginDir, err = GetLatestInstalledPluginVersionPath(pluginDir)
-		if err != nil {
-			return "", err
-		}
-	}
-	return pluginDir, nil
-}
-
-func GetLatestInstalledPluginVersionPath(pluginDir string) (string, error) {
-	LatestVersion, err := getPluginLatestVersion(pluginDir)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(pluginDir, LatestVersion.String()), nil
-}
-
-func getPluginLatestVersion(pluginDir string) (*version, error) {
-	files, err := ioutil.ReadDir(pluginDir)
-	if err != nil {
-		return nil, fmt.Errorf("Error listing files in plugin directory %s: %s", pluginDir, err.Error())
-	}
-	availableVersions := make([]*version, 0)
-
-	for _, file := range files {
-		if file.IsDir() {
-			version, err := parseVersion(file.Name())
-			if err == nil {
-				availableVersions = append(availableVersions, version)
-			}
-		}
-	}
-	pluginName := filepath.Base(pluginDir)
-
-	if len(availableVersions) < 1 {
-		return nil, fmt.Errorf("No valid versions of plugin %s found in %s", pluginName, pluginDir)
-	}
-	LatestVersion := getLatestVersion(availableVersions)
-	return LatestVersion, nil
-}
-
-func GetLatestInstalledPluginVersion(pluginDir string) (*version, error) {
-	LatestVersion, err := getPluginLatestVersion(pluginDir)
-	if err != nil {
-		return &version{}, err
-	}
-	return LatestVersion, nil
-}
-
 func GetSkeletonFilePath(filename string) (string, error) {
 	searchPath, err := GetSearchPathForSharedFiles()
 	if err != nil {
@@ -293,7 +222,7 @@ func GetSkeletonFilePath(filename string) (string, error) {
 }
 
 func GetPluginsInstallDir(pluginName string) (string, error) {
-	pluginInstallPrefixes, err := getPluginInstallPrefixes()
+	pluginInstallPrefixes, err := GetPluginInstallPrefixes()
 	if err != nil {
 		return "", err
 	}
@@ -304,65 +233,6 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes)
-}
-
-type Plugin struct {
-	Name    string
-	Version version
-}
-
-func GetAllInstalledPluginsWithVersion() ([]Plugin, error) {
-	pluginInstallPrefixes, err := getPluginInstallPrefixes()
-	if err != nil {
-		return nil, err
-	}
-	allPlugins := make(map[string]Plugin, 0)
-	for _, prefix := range pluginInstallPrefixes {
-		files, err := ioutil.ReadDir(prefix)
-		if err != nil {
-			return nil, err
-		}
-		for _, file := range files {
-			pluginDir, err := os.Stat(filepath.Join(prefix, file.Name()))
-			if err != nil {
-				continue
-			}
-			if pluginDir.IsDir() {
-				latestVersion, err := GetLatestInstalledPluginVersion(filepath.Join(prefix, file.Name()))
-				if err != nil {
-					continue
-				}
-				pluginAdded, repeated := allPlugins[file.Name()]
-				if repeated {
-					var availableVersions []*version
-					availableVersions = append(availableVersions, &pluginAdded.Version, latestVersion)
-					latest := getLatestVersion(availableVersions)
-					if latest == latestVersion {
-						allPlugins[file.Name()] = Plugin{Name: file.Name(), Version: *latestVersion}
-					}
-				} else {
-					allPlugins[file.Name()] = Plugin{Name: file.Name(), Version: *latestVersion}
-				}
-			}
-		}
-	}
-	return sortPlugins(allPlugins), nil
-}
-
-type ByPluginName []Plugin
-
-func (a ByPluginName) Len() int      { return len(a) }
-func (a ByPluginName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByPluginName) Less(i, j int) bool {
-	return a[i].Name < a[j].Name
-}
-func sortPlugins(allPlugins map[string]Plugin) []Plugin {
-	var installedPlugins []Plugin
-	for _, plugin := range allPlugins {
-		installedPlugins = append(installedPlugins, plugin)
-	}
-	sort.Sort(ByPluginName(installedPlugins))
-	return installedPlugins
 }
 
 func SubDirectoryExists(pluginDir string, pluginName string) bool {
@@ -379,7 +249,7 @@ func SubDirectoryExists(pluginDir string, pluginName string) bool {
 	return false
 }
 
-func getPluginInstallPrefixes() ([]string, error) {
+func GetPluginInstallPrefixes() ([]string, error) {
 	primaryPluginInstallDir, err := GetPrimaryPluginsInstallDir()
 	if err != nil {
 		return nil, err
@@ -580,31 +450,27 @@ func SetEnvVariable(key, value string) error {
 }
 
 func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
-	cmd := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
+	cmd := prepareCommand(false, command, workingDir, outputStreamWriter, errorStreamWriter)
 	err := cmd.Start()
 	return cmd, err
 
 }
 
 func ExecuteSystemCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
-	cmd := GetExecutableCommand(true, command...)
-	cmd.Dir = workingDir
-	cmd.Stdout = outputStreamWriter
-	cmd.Stderr = errorStreamWriter
-	cmd.Stdin = os.Stdin
+	cmd := prepareCommand(true, command, workingDir, outputStreamWriter, errorStreamWriter)
 	err := cmd.Start()
 	return cmd, err
 }
 
 func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer, env []string) (*exec.Cmd, error) {
-	cmd := prepareCommand(command, workingDir, outputStreamWriter, errorStreamWriter)
+	cmd := prepareCommand(false, command, workingDir, outputStreamWriter, errorStreamWriter)
 	cmd.Env = env
 	err := cmd.Start()
 	return cmd, err
 }
 
-func prepareCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) *exec.Cmd {
-	cmd := GetExecutableCommand(false, command...)
+func prepareCommand(isSystemCommand bool, command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) *exec.Cmd {
+	cmd := GetExecutableCommand(isSystemCommand, command...)
 	cmd.Dir = workingDir
 	cmd.Stdout = outputStreamWriter
 	cmd.Stderr = errorStreamWriter
@@ -789,66 +655,6 @@ func TrimTrailingSpace(str string) string {
 
 func (property *Property) String() string {
 	return fmt.Sprintf("#%s\n%s = %s", property.Comment, property.Name, property.DefaultValue)
-}
-
-type version struct {
-	major int
-	minor int
-	patch int
-}
-
-func parseVersion(versionText string) (*version, error) {
-	splits := strings.Split(versionText, ".")
-	if len(splits) != 3 {
-		return nil, fmt.Errorf("Incorrect number of '.' characters in Version. Version should be of the form 1.5.7")
-	}
-	major, err := strconv.Atoi(splits[0])
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing major version number %s to integer. %s", splits[0], err.Error())
-	}
-	minor, err := strconv.Atoi(splits[1])
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing minor version number %s to integer. %s", splits[0], err.Error())
-	}
-	patch, err := strconv.Atoi(splits[2])
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing patch version number %s to integer. %s", splits[0], err.Error())
-	}
-
-	return &version{major, minor, patch}, nil
-}
-
-type ByDecreasingVersion []*version
-
-func (a ByDecreasingVersion) Len() int      { return len(a) }
-func (a ByDecreasingVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByDecreasingVersion) Less(i, j int) bool {
-	return a[i].isGreaterThan(a[j])
-}
-
-func getLatestVersion(versions []*version) *version {
-	sort.Sort(ByDecreasingVersion(versions))
-	return versions[0]
-}
-
-func (version1 *version) isGreaterThan(version2 *version) bool {
-	if version1.major > version2.major {
-		return true
-	} else if version1.major == version2.major {
-		if version1.minor > version2.minor {
-			return true
-		} else if version1.minor == version2.minor {
-			if version1.patch > version2.patch {
-				return true
-			}
-			return false
-		}
-	}
-	return false
-}
-
-func (version *version) String() string {
-	return fmt.Sprintf("%d.%d.%d", version.major, version.minor, version.patch)
 }
 
 func UrlExists(url string) (bool, error) {
