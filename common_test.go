@@ -235,7 +235,7 @@ func (s *MySuite) TestGetExecutableCommand(c *C) {
 	logger2 := createLogger("logger2")
 	command := "gauge"
 
-	cmd := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
+	cmd := prepareCommand(false, []string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
 
 	pd, _ := os.Getwd()
 	args := make(map[string]bool)
@@ -261,7 +261,7 @@ func (s *MySuite) TestGetExecutableCommandForCommandsWithPath(c *C) {
 	logger2 := createLogger("logger2")
 	command := "/bin/java"
 
-	cmd := prepareCommand([]string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
+	cmd := prepareCommand(false, []string{command, "-v", "-d"}, workingDirectory, logger1, logger2)
 
 	pd, _ := os.Getwd()
 	args := make(map[string]bool)
