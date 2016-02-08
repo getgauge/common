@@ -293,6 +293,29 @@ func (s *MySuite) TestGetExecutableCommandForSystemCommands(c *C) {
 	c.Assert(cmd.Path, Equals, expectedCommand.Path)
 }
 
+func (s *MySuite) TestGetGaugeHomeDirectory(c *C) {
+	path := "value string"
+	os.Setenv(GaugeHome, path)
+
+	home, err := GetGaugeHomeDirectory()
+
+	c.Assert(err, Equals, nil)
+	c.Assert(home, Equals, path)
+}
+
+func (s *MySuite) TestGetGaugeHomeDirectoryWhen_GAUGE_HOME_IsNotSet(c *C) {
+	os.Setenv(GaugeHome, "")
+
+	home, err := GetGaugeHomeDirectory()
+
+	c.Assert(err, Equals, nil)
+	if isWindows() {
+		c.Assert(home, Equals, filepath.Join(os.Getenv(appData), ProductName))
+	} else {
+		c.Assert(home, Equals, filepath.Join(os.Getenv("HOME"), dotGauge))
+	}
+}
+
 func getAbsPath(path string) string {
 	abs, _ := filepath.Abs(path)
 	absPath, _ := filepath.EvalSymlinks(abs)

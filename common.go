@@ -60,6 +60,7 @@ const (
 const (
 	GaugeProjectRootEnv      = "GAUGE_PROJECT_ROOT"
 	GaugeRootEnvVariableName = "GAUGE_ROOT" //specifies the installation path if installs to non-standard location
+	GaugeHome                = "GAUGE_HOME" //specifies the plugin installation path if installs to non-standard location
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
 	APIPortEnvVariableName   = "GAUGE_API_PORT"
@@ -258,6 +259,10 @@ func GetPluginInstallPrefixes() ([]string, error) {
 }
 
 func GetGaugeHomeDirectory() (string, error) {
+	customPluginRoot := os.Getenv(GaugeHome)
+	if customPluginRoot != "" {
+		return customPluginRoot, nil
+	}
 	if isWindows() {
 		appDataDir := os.Getenv(appData)
 		if appDataDir == "" {
