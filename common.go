@@ -530,36 +530,6 @@ func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 	return cmd
 }
 
-func downloadUsingGo(url, targetFile string) error {
-	out, err := os.Create(targetFile)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
-// Download fires a HTTP GET request to download a resource to target directory
-func Download(url, targetDir string) (string, error) {
-	if !DirExists(targetDir) {
-		return "", fmt.Errorf("%s doesn't exists", targetDir)
-	}
-	targetFile := filepath.Join(targetDir, filepath.Base(url))
-
-	fileExist, err := UrlExists(url)
-	if !fileExist {
-		return "", err
-	}
-
-	return targetFile, downloadUsingGo(url, targetFile)
-}
-
 // GetTempDir returns the system temp directory
 func GetTempDir() string {
 	tempGaugeDir := filepath.Join(os.TempDir(), "gauge_temp")
