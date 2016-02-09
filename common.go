@@ -67,12 +67,14 @@ const (
 	GaugeDebugOptsEnv        = "GAUGE_DEBUG_OPTS" //specify the debug options to be used while launching the runner
 )
 
+// Property represents a single property in the properties file
 type Property struct {
 	Name         string
 	Comment      string
 	DefaultValue string
 }
 
+// GetProjectRoot returns the Gauge project root
 // A project root is where a manifest.json files exists
 // this routine keeps going upwards searching for manifest.json
 func GetProjectRoot() (string, error) {
@@ -82,6 +84,7 @@ func GetProjectRoot() (string, error) {
 	}
 	return findManifestInPath(pwd)
 }
+
 func findManifestInPath(pwd string) (string, error) {
 	wd, err := filepath.Abs(pwd)
 	if err != nil {
@@ -107,6 +110,7 @@ func findManifestInPath(pwd string) (string, error) {
 	}
 }
 
+// GetDirInProject returns the path of a particular directory in a Gauge project
 func GetDirInProject(dirName string, specPath string) (string, error) {
 	projectRoot, err := GetProjectRootFromSpecPath(specPath)
 	if err != nil {
@@ -120,6 +124,7 @@ func GetDirInProject(dirName string, specPath string) (string, error) {
 	return requiredDir, nil
 }
 
+// GetProjectRootFromSpecPath returns the path of the project root from a given spec path
 func GetProjectRootFromSpecPath(specPath string) (string, error) {
 	projectRoot, err := GetProjectRoot()
 	if err != nil {
@@ -133,6 +138,7 @@ func GetProjectRootFromSpecPath(specPath string) (string, error) {
 	return projectRoot, err
 }
 
+// GetDefaultPropertiesFile returns the path of the default.properties file in the default env
 func GetDefaultPropertiesFile() (string, error) {
 	envDir, err := GetDirInProject(EnvDirectoryName, "")
 	if err != nil {
@@ -145,6 +151,7 @@ func GetDefaultPropertiesFile() (string, error) {
 	return defaultEnvFile, nil
 }
 
+// AppendProperties appends the given properties to the end of the properties file.
 func AppendProperties(propertiesFile string, properties ...*Property) error {
 	file, err := os.OpenFile(propertiesFile, os.O_RDWR|os.O_APPEND, NewFilePermissions)
 	if err != nil {
@@ -156,6 +163,7 @@ func AppendProperties(propertiesFile string, properties ...*Property) error {
 	return file.Close()
 }
 
+// FindFilesInDir returns a list of files for which isValidFile func returns true
 func FindFilesInDir(dirPath string, isValidFile func(path string) bool) []string {
 	var files []string
 	filepath.Walk(dirPath, func(path string, f os.FileInfo, err error) error {
@@ -167,7 +175,7 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool) []string
 	return files
 }
 
-// gets the installation directory prefix
+// GetInstallationPrefix returns the installation directory prefix
 // /usr or /usr/local or gauge_root
 func GetInstallationPrefix() (string, error) {
 	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
@@ -194,6 +202,7 @@ func GetInstallationPrefix() (string, error) {
 	return "", fmt.Errorf("Can't find installation files")
 }
 
+// ExecutableName returns the Gauge executable name based on user's OS
 func ExecutableName() string {
 	if isWindows() {
 		return "gauge.exe"
@@ -201,6 +210,7 @@ func ExecutableName() string {
 	return "gauge"
 }
 
+// GetSearchPathForSharedFiles returns the path of "share" folder present in GAUGE_ROOT
 func GetSearchPathForSharedFiles() (string, error) {
 	installationPrefix, err := GetInstallationPrefix()
 	if err != nil {
@@ -209,6 +219,7 @@ func GetSearchPathForSharedFiles() (string, error) {
 	return filepath.Join(installationPrefix, "share", ProductName), nil
 }
 
+// GetSkeletonFilePath returns the path skeleton file
 func GetSkeletonFilePath(filename string) (string, error) {
 	searchPath, err := GetSearchPathForSharedFiles()
 	if err != nil {
@@ -222,6 +233,7 @@ func GetSkeletonFilePath(filename string) (string, error) {
 	return "", fmt.Errorf("Failed to find the skeleton file: %s", filename)
 }
 
+// GetPluginsInstallDir returns the plugin installation directory
 func GetPluginsInstallDir(pluginName string) (string, error) {
 	pluginInstallPrefixes, err := GetPluginInstallPrefixes()
 	if err != nil {
@@ -236,6 +248,7 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 	return "", fmt.Errorf("Plugin '%s' not installed on following locations : %s", pluginName, pluginInstallPrefixes)
 }
 
+// SubDirectoryExists checks if a dir for given plugin exists in the plugin directory
 func SubDirectoryExists(pluginDir string, pluginName string) bool {
 	files, err := ioutil.ReadDir(pluginDir)
 	if err != nil {
@@ -250,6 +263,7 @@ func SubDirectoryExists(pluginDir string, pluginName string) bool {
 	return false
 }
 
+// GetPluginInstallPrefixes returns the installation prefix path for the plugins
 func GetPluginInstallPrefixes() ([]string, error) {
 	primaryPluginInstallDir, err := GetPrimaryPluginsInstallDir()
 	if err != nil {
@@ -258,6 +272,7 @@ func GetPluginInstallPrefixes() ([]string, error) {
 	return []string{primaryPluginInstallDir}, nil
 }
 
+// GetGaugeHomeDirectory returns GAUGE_HOME. This is where all the plugins are installed
 func GetGaugeHomeDirectory() (string, error) {
 	customPluginRoot := os.Getenv(GaugeHome)
 	if customPluginRoot != "" {
@@ -277,6 +292,7 @@ func GetGaugeHomeDirectory() (string, error) {
 	return filepath.Join(userHome, dotGauge), nil
 }
 
+// GetPrimaryPluginsInstallDir returns the primary plugin installation dir
 func GetPrimaryPluginsInstallDir() (string, error) {
 	gaugeHome, err := GetGaugeHomeDirectory()
 	if err != nil {
@@ -285,6 +301,7 @@ func GetPrimaryPluginsInstallDir() (string, error) {
 	return filepath.Join(gaugeHome, Plugins), nil
 }
 
+// GetLibsPath returns the path of the libs directory
 func GetLibsPath() (string, error) {
 	prefix, err := GetInstallationPrefix()
 	if err != nil {
@@ -293,6 +310,7 @@ func GetLibsPath() (string, error) {
 	return filepath.Join(prefix, "lib", ProductName), nil
 }
 
+// IsPluginInstalled checks if the given Gauge plugin version is installed
 func IsPluginInstalled(name, version string) bool {
 	pluginsDir, err := GetPluginsInstallDir(name)
 	if err != nil {
@@ -301,6 +319,7 @@ func IsPluginInstalled(name, version string) bool {
 	return DirExists(path.Join(pluginsDir, name, version))
 }
 
+// GetGaugeConfiguration parsed the gauge.properties file and other config files from GAUGE_ROOT and returns the contents
 func GetGaugeConfiguration() (properties.Properties, error) {
 	sharedDir, err := GetSearchPathForSharedFiles()
 	if err != nil {
@@ -314,6 +333,7 @@ func GetGaugeConfiguration() (properties.Properties, error) {
 	return config, nil
 }
 
+// ReadFileContents returns the contents of the file
 func ReadFileContents(file string) (string, error) {
 	if !FileExists(file) {
 		return "", fmt.Errorf("File %s doesn't exist.", file)
@@ -326,6 +346,7 @@ func ReadFileContents(file string) (string, error) {
 	return string(bytes), nil
 }
 
+// FileExists checks if the given file exists
 func FileExists(path string) bool {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -334,15 +355,16 @@ func FileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+// DirExists checks if the given directory exists
 func DirExists(dirPath string) bool {
 	stat, err := os.Stat(dirPath)
 	if err == nil && stat.IsDir() {
 		return true
 	}
-
 	return false
 }
 
+// MirrorDir creates an exact copy of source dir to destination dir
 // Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
 func MirrorDir(src, dst string) ([]string, error) {
 	var filesAdded []string
@@ -365,6 +387,7 @@ func MirrorDir(src, dst string) ([]string, error) {
 	return filesAdded, err
 }
 
+// MirrorFile creates an exact copy of source file to destination file
 // Modified version of bradfitz's camlistore (https://github.com/bradfitz/camlistore/blob/master/make.go)
 func MirrorFile(src, dst string) error {
 	sfi, err := os.Stat(src)
@@ -420,10 +443,12 @@ func isExecMode(mode os.FileMode) bool {
 	return (mode & 0111) != 0
 }
 
+// GetUniqueID returns a unique id for the proto messages
 func GetUniqueID() int64 {
 	return time.Now().UnixNano()
 }
 
+// CopyFile creates a copy of source file to destination file
 func CopyFile(src, dest string) error {
 	if !FileExists(src) {
 		return fmt.Errorf("%s doesn't exist", src)
@@ -442,7 +467,7 @@ func CopyFile(src, dest string) error {
 	return nil
 }
 
-// A wrapper around os.SetEnv
+// SetEnvVariable is a wrapper around os.SetEnv to set env variable
 func SetEnvVariable(key, value string) error {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -454,19 +479,21 @@ func SetEnvVariable(key, value string) error {
 	return nil
 }
 
+// ExecuteCommand executes the given command in the working directory.
 func ExecuteCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
 	cmd := prepareCommand(false, command, workingDir, outputStreamWriter, errorStreamWriter)
 	err := cmd.Start()
 	return cmd, err
-
 }
 
+// ExecuteSystemCommand executes the given system command in the working directory.
 func ExecuteSystemCommand(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer) (*exec.Cmd, error) {
 	cmd := prepareCommand(true, command, workingDir, outputStreamWriter, errorStreamWriter)
 	err := cmd.Start()
 	return cmd, err
 }
 
+// ExecuteCommandWithEnv executes command after setting the given environment
 func ExecuteCommandWithEnv(command []string, workingDir string, outputStreamWriter io.Writer, errorStreamWriter io.Writer, env []string) (*exec.Cmd, error) {
 	cmd := prepareCommand(false, command, workingDir, outputStreamWriter, errorStreamWriter)
 	cmd.Env = env
@@ -483,6 +510,7 @@ func prepareCommand(isSystemCommand bool, command []string, workingDir string, o
 	return cmd
 }
 
+// GetExecutableCommand returns the path of the executable file
 func GetExecutableCommand(isSystemCommand bool, command ...string) *exec.Cmd {
 	if len(command) == 0 {
 		panic(fmt.Errorf("Invalid executable command"))
@@ -517,6 +545,7 @@ func downloadUsingGo(url, targetFile string) error {
 	return err
 }
 
+// Download fires a HTTP GET request to download a resource to target directory
 func Download(url, targetDir string) (string, error) {
 	if !DirExists(targetDir) {
 		return "", fmt.Errorf("%s doesn't exists", targetDir)
@@ -531,10 +560,12 @@ func Download(url, targetDir string) (string, error) {
 	return targetFile, downloadUsingGo(url, targetFile)
 }
 
+// DownloadToTempDir fires a HTTP GET request to download a resource to temp directory
 func DownloadToTempDir(url string) (string, error) {
 	return Download(url, GetTempDir())
 }
 
+// GetTempDir returns the system temp directory
 func GetTempDir() string {
 	tempGaugeDir := filepath.Join(os.TempDir(), "gauge_temp")
 	tempGaugeDir += strconv.FormatInt(time.Now().UnixNano(), 10)
@@ -544,6 +575,7 @@ func GetTempDir() string {
 	return tempGaugeDir
 }
 
+// Remove removes all the files and directories recursively for the given path
 func Remove(path string) error {
 	return os.RemoveAll(path)
 }
@@ -555,6 +587,7 @@ func exists(path string) bool {
 	return true
 }
 
+// UnzipArchive extract the zip file to destination directory
 func UnzipArchive(zipFile string, dest string) (string, error) {
 	if !FileExists(zipFile) {
 		return "", fmt.Errorf("ZipFile %s does not exist", zipFile)
@@ -602,6 +635,7 @@ func UnzipArchive(zipFile string, dest string) (string, error) {
 	return dest, nil
 }
 
+// SaveFile saves contents at the given filepath
 func SaveFile(filePath, contents string, takeBackup bool) error {
 	backupFile := ""
 	if takeBackup {
@@ -648,6 +682,7 @@ func isWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
+// TrimTrailingSpace trims the trailing spaces in the given string
 func TrimTrailingSpace(str string) string {
 	var r = regexp.MustCompile(`[ \t]+$`)
 	return r.ReplaceAllString(str, "")
@@ -657,6 +692,7 @@ func (property *Property) String() string {
 	return fmt.Sprintf("#%s\n%s = %s", property.Comment, property.Name, property.DefaultValue)
 }
 
+// UrlExists checks if the given url exists
 func UrlExists(url string) (bool, error) {
 	resp, err := http.Head(url)
 	if err != nil {
@@ -668,6 +704,7 @@ func UrlExists(url string) (bool, error) {
 	return true, nil
 }
 
+// GetPluginProperties returns the properties of the given plugin.
 func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, error) {
 	pluginPropertiesJSON, err := ioutil.ReadFile(jsonPropertiesFile)
 	if err != nil {
@@ -680,6 +717,7 @@ func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, err
 	return pluginJSON.(map[string]interface{}), nil
 }
 
+// GetGaugePluginVersion returns the latest version installed of the given plugin
 func GetGaugePluginVersion(pluginName string) (string, error) {
 	pluginProperties, err := GetPluginProperties(fmt.Sprintf("%s.json", pluginName))
 	if err != nil {
