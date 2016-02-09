@@ -560,11 +560,6 @@ func Download(url, targetDir string) (string, error) {
 	return targetFile, downloadUsingGo(url, targetFile)
 }
 
-// DownloadToTempDir fires a HTTP GET request to download a resource to temp directory
-func DownloadToTempDir(url string) (string, error) {
-	return Download(url, GetTempDir())
-}
-
 // GetTempDir returns the system temp directory
 func GetTempDir() string {
 	tempGaugeDir := filepath.Join(os.TempDir(), "gauge_temp")
