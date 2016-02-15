@@ -55,6 +55,7 @@ const (
 	Plugins                 = "plugins"
 	appData                 = "APPDATA"
 	gaugePropertiesFile     = "gauge.properties"
+	NightlyDatelayout       = "2006-01-02"
 )
 
 const (
