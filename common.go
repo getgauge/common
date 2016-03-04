@@ -65,6 +65,7 @@ const (
 	GaugePortEnvName         = "GAUGE_PORT" // user specifies this to use a specific port
 	GaugeInternalPortEnvName = "GAUGE_INTERNAL_PORT"
 	APIPortEnvVariableName   = "GAUGE_API_PORT"
+	APIV2PortEnvVariableName = "GAUGE_API_V2_PORT"
 	GaugeDebugOptsEnv        = "GAUGE_DEBUG_OPTS" //specify the debug options to be used while launching the runner
 )
 
