@@ -1,7 +1,11 @@
 common
 ======
 
-Shared code between components
+This is a shared utility code between components written in Golang.
+
+> Prerequisite
+
+    Golang
 
 License
 -------
