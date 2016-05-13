@@ -149,7 +149,7 @@ func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
 func (s *MySuite) TestFindFilesInDir(c *C) {
 	foundSpecFiles := FindFilesInDir(filepath.Join(dummyProject, "specs"), func(filePath string) bool {
 		return filepath.Ext(filePath) == ".spec"
-	}, func(f os.FileInfo) bool {
+	}, func(p string, f os.FileInfo) bool {
 		return false
 	})
 
@@ -157,7 +157,7 @@ func (s *MySuite) TestFindFilesInDir(c *C) {
 
 	foundConceptFiles := FindFilesInDir(filepath.Join(dummyProject, "concepts"), func(filePath string) bool {
 		return filepath.Ext(filePath) == ".cpt"
-	}, func(f os.FileInfo) bool {
+	}, func(p string, f os.FileInfo) bool {
 		return false
 	})
 
@@ -167,8 +167,7 @@ func (s *MySuite) TestFindFilesInDir(c *C) {
 func (s *MySuite) TestFindFilesInDirFiltersDirectoriesThatAreSkipped(c *C) {
 	foundConceptFiles := FindFilesInDir(dummyProject, func(filePath string) bool {
 		return filepath.Ext(filePath) == ".cpt"
-	}, func(f os.FileInfo) bool {
-		fmt.Println(f.Name())
+	}, func(p string, f os.FileInfo) bool {
 		return strings.HasPrefix(f.Name(), ".")
 	})
 
