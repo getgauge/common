@@ -65,9 +65,12 @@ func createDummyProject(project string) {
 		filepath.Join(project, "concepts", "nested"),
 		filepath.Join(project, "concepts", "nested", "deep_nested"),
 		filepath.Join(project, EnvDirectoryName),
+		filepath.Join(project, ".git"),
 		filepath.Join(project, EnvDirectoryName, DefaultEnvDir)}
 
 	filesToCreate := []string{filepath.Join(project, ManifestFile),
+		filepath.Join(project, ".git", "fourth.cpt"),
+		filepath.Join(project, ".git", "fifth.cpt"),
 		filepath.Join(project, "specs", "first.spec"),
 		filepath.Join(project, "specs", "second.spec"),
 		filepath.Join(project, "specs", "nested", "nested.spec"),
@@ -146,12 +149,27 @@ func (s *MySuite) TestGetNotExistingDirInProject(c *C) {
 func (s *MySuite) TestFindFilesInDir(c *C) {
 	foundSpecFiles := FindFilesInDir(filepath.Join(dummyProject, "specs"), func(filePath string) bool {
 		return filepath.Ext(filePath) == ".spec"
+	}, func(f os.FileInfo) bool {
+		return false
 	})
 
 	c.Assert(len(foundSpecFiles), Equals, 4)
 
 	foundConceptFiles := FindFilesInDir(filepath.Join(dummyProject, "concepts"), func(filePath string) bool {
 		return filepath.Ext(filePath) == ".cpt"
+	}, func(f os.FileInfo) bool {
+		return false
+	})
+
+	c.Assert(len(foundConceptFiles), Equals, 3)
+}
+
+func (s *MySuite) TestFindFilesInDirFiltersDirectoriesThatAreSkipped(c *C) {
+	foundConceptFiles := FindFilesInDir(dummyProject, func(filePath string) bool {
+		return filepath.Ext(filePath) == ".cpt"
+	}, func(f os.FileInfo) bool {
+		fmt.Println(f.Name())
+		return strings.HasPrefix(f.Name(), ".")
 	})
 
 	c.Assert(len(foundConceptFiles), Equals, 3)
