@@ -320,7 +320,7 @@ func IsPluginInstalled(name, version string) bool {
 	if err != nil {
 		return false
 	}
-	return DirExists(path.Join(pluginsDir, name, version))
+	return DirExists(filepath.Join(pluginsDir, name, version))
 }
 
 // GetGaugeConfiguration parsed the gauge.properties file and other config files from GAUGE_ROOT and returns the contents
