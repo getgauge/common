@@ -29,7 +29,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -93,7 +92,7 @@ func findManifestInPath(pwd string) (string, error) {
 		return "", fmt.Errorf("Failed to find project directory: %s", err)
 	}
 	manifestExists := func(dir string) bool {
-		return FileExists(path.Join(dir, ManifestFile))
+		return FileExists(filepath.Join(dir, ManifestFile))
 	}
 	dir := wd
 
@@ -130,7 +129,7 @@ func GetDirInProject(dirName string, specPath string) (string, error) {
 func GetProjectRootFromSpecPath(specPath string) (string, error) {
 	projectRoot, err := GetProjectRoot()
 	if err != nil {
-		dir, _ := path.Split(specPath)
+		dir, _ := filepath.Split(specPath)
 		fullPath, pathErr := filepath.Abs(dir)
 		if pathErr != nil {
 			return "", fmt.Errorf("Unable to get absolute path to specifications. %s", err)
@@ -199,7 +198,7 @@ func GetInstallationPrefix() (string, error) {
 	}
 
 	for _, p := range possibleInstallationPrefixes {
-		if FileExists(path.Join(p, "bin", ExecutableName())) {
+		if FileExists(filepath.Join(p, "bin", ExecutableName())) {
 			return p, nil
 		}
 	}
