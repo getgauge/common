@@ -211,23 +211,23 @@ func (s *MySuite) TestReadingContentsInUTF8WithoutSignature(c *C) {
 	contents, err := ReadFileContents(filePath)
 
 	c.Assert(err, Equals, nil)
-	c.Assert(contents, Equals, `column1,column2`+"\r"+`
-value1,value2`+"\r"+`
+	c.Assert(contents, Equals, `column1,column2
+value1,value2
 `)
 }
 
 func (s *MySuite) TestReadingContentsInUTF8WithSignature(c *C) {
 	filePath, _ := filepath.Abs(filepath.Join("_testdata", "utf8WithSig.csv"))
 	bytes, _ := ioutil.ReadFile(filePath)
-	c.Assert(string(bytes), Equals, "\ufeff"+`word,count`+"\r"+`
-gauge,3`+"\r"+`
+	c.Assert(string(bytes), Equals, "\ufeff"+`word,count
+gauge,3
 `)
 
 	contents, err := ReadFileContents(filePath)
 
 	c.Assert(err, Equals, nil)
-	c.Assert(contents, Equals, `word,count`+"\r"+`
-gauge,3`+"\r"+`
+	c.Assert(contents, Equals, `word,count
+gauge,3
 `)
 }
 
