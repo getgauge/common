@@ -19,6 +19,7 @@ package common
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -202,6 +203,32 @@ func (s *MySuite) TestAppendingPropertiesToFile(c *C) {
 	indexIsLesser := strings.Index(contents, firstProperty.String()) < strings.Index(contents, secondProperty.String())
 	c.Assert(indexIsLesser, Equals, true)
 
+}
+
+func (s *MySuite) TestReadingContentsInUTF8WithoutSignature(c *C) {
+	filePath, _ := filepath.Abs(filepath.Join("_testdata", "utf8WithoutSig.csv"))
+
+	contents, err := ReadFileContents(filePath)
+
+	c.Assert(err, Equals, nil)
+	c.Assert(contents, Equals, `column1,column2`+"\r"+`
+value1,value2`+"\r"+`
+`)
+}
+
+func (s *MySuite) TestReadingContentsInUTF8WithSignature(c *C) {
+	filePath, _ := filepath.Abs(filepath.Join("_testdata", "utf8WithSig.csv"))
+	bytes, _ := ioutil.ReadFile(filePath)
+	c.Assert(string(bytes), Equals, "\ufeff"+`word,count`+"\r"+`
+gauge,3`+"\r"+`
+`)
+
+	contents, err := ReadFileContents(filePath)
+
+	c.Assert(err, Equals, nil)
+	c.Assert(contents, Equals, `word,count`+"\r"+`
+gauge,3`+"\r"+`
+`)
 }
 
 func (s *MySuite) TestGetProjectRootFromSpecPath(c *C) {

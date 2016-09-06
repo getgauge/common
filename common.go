@@ -346,8 +346,7 @@ func ReadFileContents(file string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Failed to read the file %s.", file)
 	}
-
-	return string(bytes), nil
+	return strings.TrimLeft(string(bytes), "\xef\xbb\xbf"), nil
 }
 
 // FileExists checks if the given file exists
