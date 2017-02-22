@@ -179,6 +179,34 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool, shouldSk
 	return files
 }
 
+// GetConfigurationPrefix returns the configuration directory prefix
+// $home/.gauge/config or /usr or /usr/local or gauge_root
+func GetConfigurationPrefix() (string, error) {
+	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
+	if gaugeRoot != "" {
+		return gaugeRoot, nil
+	}
+	var possibleConfigurationPrefixes []string
+	if isWindows() {
+		programFilesPath := os.Getenv("APPDATA")
+		if programFilesPath == "" {
+			return "", fmt.Errorf("Cannot locate gauge shared file. Could not find Program Files directory.")
+		}
+		possibleConfigurationPrefixes = []string{filepath.Join(programFilesPath, ProductName, "config")}
+	} else {
+		home := os.Getenv("HOME")
+		possibleConfigurationPrefixes = []string{filepath.Join(home, ".gauge", "config"), "/usr/local", "/usr"}
+	}
+
+	for _, p := range possibleConfigurationPrefixes {
+		if FileExists(filepath.Join(p, "share", "gauge")) {
+			return p, nil
+		}
+	}
+
+	return "", fmt.Errorf("Can't find configuration files")
+}
+
 // GetInstallationPrefix returns the installation directory prefix
 // /usr or /usr/local or gauge_root
 func GetInstallationPrefix() (string, error) {
@@ -216,7 +244,7 @@ func ExecutableName() string {
 
 // GetSearchPathForSharedFiles returns the path of "share" folder present in GAUGE_ROOT
 func GetSearchPathForSharedFiles() (string, error) {
-	installationPrefix, err := GetInstallationPrefix()
+	installationPrefix, err := GetConfigurationPrefix()
 	if err != nil {
 		return "", err
 	}
