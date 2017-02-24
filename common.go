@@ -49,6 +49,7 @@ const (
 	DefaultEnvDir           = "default"
 	ProductName             = "gauge"
 	dotGauge                = ".gauge"
+	config                  = "config"
 	SpecsDirectoryName      = "specs"
 	ConceptFileExtension    = ".cpt"
 	Plugins                 = "plugins"
@@ -180,26 +181,26 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool, shouldSk
 }
 
 // GetConfigurationPrefix returns the configuration directory prefix
-// $home/.gauge/config or /usr or /usr/local or gauge_root
+// $home/.gauge/config  or gauge_root
 func GetConfigurationPrefix() (string, error) {
 	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
 	if gaugeRoot != "" {
 		return gaugeRoot, nil
 	}
+
 	var possibleConfigurationPrefixes []string
 	if isWindows() {
-		programFilesPath := os.Getenv("APPDATA")
-		if programFilesPath == "" {
-			return "", fmt.Errorf("Cannot locate gauge shared file. Could not find Program Files directory.")
+		appDataPath := os.Getenv(appData)
+		if appDataPath == "" {
+			return "", fmt.Errorf("Cannot locate gauge shared file. Could not find App Data directory.")
 		}
-		possibleConfigurationPrefixes = []string{filepath.Join(programFilesPath, ProductName, "config")}
+		possibleConfigurationPrefixes = []string{filepath.Join(appDataPath, ProductName)}
 	} else {
 		home := os.Getenv("HOME")
-		possibleConfigurationPrefixes = []string{filepath.Join(home, ".gauge", "config"), "/usr/local", "/usr"}
+		possibleConfigurationPrefixes = []string{filepath.Join(home, dotGauge)}
 	}
-
 	for _, p := range possibleConfigurationPrefixes {
-		if FileExists(filepath.Join(p, "share", "gauge")) {
+		if FileExists(filepath.Join(p, config, gaugePropertiesFile)) {
 			return p, nil
 		}
 	}
@@ -244,11 +245,11 @@ func ExecutableName() string {
 
 // GetSearchPathForSharedFiles returns the path of "share" folder present in GAUGE_ROOT
 func GetSearchPathForSharedFiles() (string, error) {
-	installationPrefix, err := GetConfigurationPrefix()
+	configPrefix, err := GetConfigurationPrefix()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(installationPrefix, "share", ProductName), nil
+	return filepath.Join(configPrefix, config), nil
 }
 
 // GetSkeletonFilePath returns the path skeleton file
@@ -353,11 +354,11 @@ func IsPluginInstalled(name, version string) bool {
 
 // GetGaugeConfiguration parsed the gauge.properties file and other config files from GAUGE_ROOT and returns the contents
 func GetGaugeConfiguration() (properties.Properties, error) {
-	sharedDir, err := GetSearchPathForSharedFiles()
+	configDir, err := GetSearchPathForSharedFiles()
 	if err != nil {
 		return nil, err
 	}
-	propertiesFile := filepath.Join(sharedDir, gaugePropertiesFile)
+	propertiesFile := filepath.Join(configDir, gaugePropertiesFile)
 	config, err := properties.Load(propertiesFile)
 	if err != nil {
 		return nil, err
