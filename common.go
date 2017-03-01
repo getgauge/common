@@ -182,27 +182,27 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool, shouldSk
 
 // GetConfigurationPrefix returns the configuration directory prefix
 // $home/.gauge/config  or gauge_root
-func GetConfigurationPrefix() (string, error) {
+func GetConfigurationDir() (string, error) {
 	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
 	if gaugeRoot != "" {
 		return gaugeRoot, nil
 	}
 
-	var possibleConfigurationPrefixes []string
+	var configDir string
+
 	if isWindows() {
 		appDataPath := os.Getenv(appData)
 		if appDataPath == "" {
 			return "", fmt.Errorf("Cannot locate gauge shared file. Could not find App Data directory.")
 		}
-		possibleConfigurationPrefixes = []string{filepath.Join(appDataPath, ProductName)}
+		configDir = filepath.Join(appDataPath, ProductName, config)
 	} else {
 		home := os.Getenv("HOME")
-		possibleConfigurationPrefixes = []string{filepath.Join(home, dotGauge)}
+		configDir = filepath.Join(home, dotGauge, config)
 	}
-	for _, p := range possibleConfigurationPrefixes {
-		if FileExists(filepath.Join(p, config, gaugePropertiesFile)) {
-			return p, nil
-		}
+
+	if configDir != "" {
+		return configDir, nil
 	}
 
 	return "", fmt.Errorf("Can't find configuration files")
@@ -245,11 +245,11 @@ func ExecutableName() string {
 
 // GetSearchPathForSharedFiles returns the path of "share" folder present in GAUGE_ROOT
 func GetSearchPathForSharedFiles() (string, error) {
-	configPrefix, err := GetConfigurationPrefix()
+	configDir, err := GetConfigurationDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(configPrefix, config), nil
+	return configDir, nil
 }
 
 // GetSkeletonFilePath returns the path skeleton file
