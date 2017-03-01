@@ -334,15 +334,6 @@ func GetPrimaryPluginsInstallDir() (string, error) {
 	return filepath.Join(gaugeHome, Plugins), nil
 }
 
-// GetLibsPath returns the path of the libs directory
-func GetLibsPath() (string, error) {
-	prefix, err := GetInstallationPrefix()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(prefix, "lib", ProductName), nil
-}
-
 // IsPluginInstalled checks if the given Gauge plugin version is installed
 func IsPluginInstalled(name, version string) bool {
 	pluginsDir, err := GetPluginsInstallDir(name)
