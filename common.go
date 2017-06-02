@@ -28,7 +28,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -318,10 +317,7 @@ func GetGaugeHomeDirectory() (string, error) {
 		}
 		return filepath.Join(appDataDir, ProductName), nil
 	}
-	userHome, err := getUserHome()
-	if err != nil {
-		return "", fmt.Errorf("Failed to find plugin installation path. Could not get User home directory: %s", err)
-	}
+	userHome := getUserHomeFromEnv()
 	return filepath.Join(userHome, dotGauge), nil
 }
 
@@ -641,18 +637,6 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 	}
 
 	return nil
-}
-
-func getUserHome() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		homeFromEnv := getUserHomeFromEnv()
-		if homeFromEnv != "" {
-			return homeFromEnv, nil
-		}
-		return "", fmt.Errorf("Could not get the home directory")
-	}
-	return usr.HomeDir, nil
 }
 
 func getUserHomeFromEnv() string {
