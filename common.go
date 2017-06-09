@@ -486,6 +486,34 @@ func CopyFile(src, dest string) error {
 	return nil
 }
 
+//Appends contents of source file to destination file.
+// If destination file is not present, Copy file action is performed
+func AppendToFile(srcFile, destFile string) error {
+	if FileExists(destFile) {
+		f, err := os.OpenFile(destFile, os.O_APPEND|os.O_WRONLY, 0666)
+		if err != nil {
+			return fmt.Errorf("Failed to open %s. %s \n", destFile, err.Error())
+		}
+
+		defer f.Close()
+
+		srcFileContent, err := ReadFileContents(srcFile)
+		if err != nil {
+			return fmt.Errorf("Failed to read %s. %s \n", srcFile, err.Error())
+		}
+
+		if _, err = f.WriteString(srcFileContent); err != nil {
+			return fmt.Errorf("Failed to append from %s. %s \n", srcFile, err.Error())
+		}
+	} else {
+		err := CopyFile(srcFile, destFile)
+		if err != nil {
+			return fmt.Errorf("Failed to copy %s. %s \n", srcFile, err.Error())
+		}
+	}
+	return nil
+}
+
 // SetEnvVariable is a wrapper around os.SetEnv to set env variable
 func SetEnvVariable(key, value string) error {
 	if strings.TrimSpace(value) == "" {
