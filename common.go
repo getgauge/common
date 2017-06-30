@@ -53,7 +53,7 @@ const (
 	ConceptFileExtension    = ".cpt"
 	Plugins                 = "plugins"
 	appData                 = "APPDATA"
-	gaugePropertiesFile     = "gauge.properties"
+	GaugePropertiesFile     = "gauge.properties"
 	NightlyDatelayout       = "2006-01-02"
 )
 
@@ -345,7 +345,7 @@ func GetGaugeConfiguration() (properties.Properties, error) {
 	if err != nil {
 		return nil, err
 	}
-	propertiesFile := filepath.Join(configDir, gaugePropertiesFile)
+	propertiesFile := filepath.Join(configDir, GaugePropertiesFile)
 	config, err := properties.Load(propertiesFile)
 	if err != nil {
 		return nil, err
