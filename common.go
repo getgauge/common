@@ -367,17 +367,15 @@ func ReadFileContents(file string) (string, error) {
 
 // FileExists checks if the given file exists
 func FileExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
+	if _, err := os.Stat(path); err == nil {
 		return true
 	}
-	return !os.IsNotExist(err)
+	return false
 }
 
 // DirExists checks if the given directory exists
 func DirExists(dirPath string) bool {
-	stat, err := os.Stat(dirPath)
-	if err == nil && stat.IsDir() {
+	if stat, err := os.Stat(dirPath); err == nil && stat.IsDir() {
 		return true
 	}
 	return false
