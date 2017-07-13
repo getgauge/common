@@ -180,8 +180,14 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool, shouldSk
 }
 
 // GetConfigurationPrefix returns the configuration directory prefix
-// $home/.gauge/config  or gauge_root
+// $GAUGE_HOME or $GAUGE_ROOT or $home/.gauge/config
 func GetConfigurationDir() (string, error) {
+	gaugeHome := os.Getenv(GaugeHome)
+	if gaugeHome != "" {
+		return gaugeHome, nil
+	}
+
+	// TODO: Should be removed
 	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
 	if gaugeRoot != "" {
 		return gaugeRoot, nil
@@ -210,6 +216,7 @@ func GetConfigurationDir() (string, error) {
 // GetInstallationPrefix returns the installation directory prefix
 // /usr or /usr/local or gauge_root
 func GetInstallationPrefix() (string, error) {
+	// TODO: should be removed
 	gaugeRoot := os.Getenv(GaugeRootEnvVariableName)
 	if gaugeRoot != "" {
 		return gaugeRoot, nil
