@@ -184,7 +184,7 @@ func FindFilesInDir(dirPath string, isValidFile func(path string) bool, shouldSk
 func GetConfigurationDir() (string, error) {
 	gaugeHome := os.Getenv(GaugeHome)
 	if gaugeHome != "" {
-		return gaugeHome, nil
+		return filepath.Join(gaugeHome, config), nil
 	}
 
 	// TODO: Should be removed
