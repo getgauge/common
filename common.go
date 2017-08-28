@@ -506,7 +506,7 @@ func AppendToFile(srcFile, destFile string) error {
 		if err != nil {
 			return fmt.Errorf("Failed to read %s. %s \n", srcFile, err.Error())
 		}
-
+		srcFileContent = fmt.Sprintf("\n%s\n", srcFileContent)
 		if _, err = f.WriteString(srcFileContent); err != nil {
 			return fmt.Errorf("Failed to append from %s. %s \n", srcFile, err.Error())
 		}
