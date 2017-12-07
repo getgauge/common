@@ -356,7 +356,7 @@ func (s *MySuite) TestGetGaugeHomeDirectoryWhen_GAUGE_HOME_IsNotSet(c *C) {
 	if isWindows() {
 		c.Assert(home, Equals, filepath.Join(os.Getenv(appData), ProductName))
 	} else {
-		c.Assert(home, Equals, filepath.Join(os.Getenv("HOME"), dotGauge))
+		c.Assert(home, Equals, filepath.Join(os.Getenv("HOME"), DotGauge))
 	}
 }
 
