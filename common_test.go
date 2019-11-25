@@ -211,24 +211,26 @@ func (s *MySuite) TestReadingContentsInUTF8WithoutSignature(c *C) {
 	contents, err := ReadFileContents(filePath)
 
 	c.Assert(err, Equals, nil)
-	c.Assert(contents, Equals, `column1,column2
-value1,value2
-`)
+	if isWindows() {
+		c.Assert(contents, Equals, "column1,column2\r\nvalue1,value2\r\n")
+	} else {
+		c.Assert(contents, Equals, "column1,column2\nvalue1,value2\n")
+	}
 }
 
 func (s *MySuite) TestReadingContentsInUTF8WithSignature(c *C) {
 	filePath, _ := filepath.Abs(filepath.Join("_testdata", "utf8WithSig.csv"))
 	bytes, _ := ioutil.ReadFile(filePath)
-	c.Assert(string(bytes), Equals, "\ufeff"+`word,count
-gauge,3
-`)
-
 	contents, err := ReadFileContents(filePath)
 
 	c.Assert(err, Equals, nil)
-	c.Assert(contents, Equals, `word,count
-gauge,3
-`)
+	if isWindows() {
+		c.Assert(string(bytes), Equals, "\ufeff"+"word,count\r\ngauge,3\r\n")
+		c.Assert(contents, Equals, "word,count\r\ngauge,3\r\n")
+	} else {
+		c.Assert(string(bytes), Equals, "\ufeff"+"word,count\ngauge,3\n")
+		c.Assert(contents, Equals, "word,count\ngauge,3\n")
+	}
 }
 
 func (s *MySuite) TestGetProjectRootFromSpecPath(c *C) {
