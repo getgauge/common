@@ -329,13 +329,19 @@ func IsPluginInstalled(name, version string) bool {
 	return DirExists(filepath.Join(pluginsDir, name, version))
 }
 
-// GetGaugeConfiguration parsed the gauge.properties file and other config files from GAUGE_HOME and returns the contents
+// GetGaugeConfiguration parsed the gauge.properties file from GAUGE_HOME and returns the contents
 func GetGaugeConfiguration() (properties.Properties, error) {
+	fmt.Println("[DEPRECATED]: Please use GetGaugeConfigurationFor(propertiesFileName)")
+	return GetGaugeConfigurationFor(GaugePropertiesFile)
+}
+
+// GetGaugeConfiguration parsed the given properties file from GAUGE_HOME and returns the contents
+func GetGaugeConfigurationFor(propertiesFileName string) (properties.Properties, error) {
 	configDir, err := GetConfigurationDir()
 	if err != nil {
 		return nil, err
 	}
-	propertiesFile := filepath.Join(configDir, GaugePropertiesFile)
+	propertiesFile := filepath.Join(configDir, propertiesFileName)
 	config, err := properties.Load(propertiesFile)
 	if err != nil {
 		return nil, err
