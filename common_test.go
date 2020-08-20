@@ -117,7 +117,7 @@ func (s *MySuite) TestGetProjectFailing(c *C) {
 
 	_, err := GetProjectRoot()
 	c.Assert(err, NotNil)
-	c.Assert(err.Error(), Equals, "Failed to find project directory")
+	c.Assert(err.Error(), Equals, "Failed to find Gauge project directory. Missing manifest.json file.")
 }
 
 func (s *MySuite) TestGetDirInProject(c *C) {
@@ -249,7 +249,7 @@ func (s *MySuite) TestGetProjectRootGivesErrorWhenProvidedInvalidSpecFilePath(c 
 
 	root, err := GetProjectRootFromSpecPath("/specs/nested/deep_nested/deep_nested.spec")
 
-	c.Assert(err.Error(), Equals, fmt.Sprintf("Failed to find project directory"))
+	c.Assert(err.Error(), Equals, fmt.Sprintf("Failed to find Gauge project directory. Missing manifest.json file."))
 	c.Assert(root, Equals, "")
 }
 
