@@ -1,7 +1,7 @@
 {
   "extends": [
     "config:base"
-  ]
+  ],
   "commitBody": "Signed-off-by: renovatebot",
   "automergeType": "pr"
 }
