@@ -475,7 +475,7 @@ func CopyFile(src, dest string) error {
 	return nil
 }
 
-//Appends contents of source file to destination file.
+// Appends contents of source file to destination file.
 // If destination file is not present, Copy file action is performed
 func AppendToFile(srcFile, destFile string) error {
 	if FileExists(destFile) {
@@ -542,7 +542,6 @@ func prepareCommand(isSystemCommand bool, command []string, workingDir string, o
 	cmd.Dir = workingDir
 	cmd.Stdout = outputStreamWriter
 	cmd.Stderr = errorStreamWriter
-	cmd.Stdin = os.Stdin
 	return cmd
 }
 
