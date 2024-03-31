@@ -8,7 +8,6 @@ package common
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -209,7 +208,7 @@ func (s *MySuite) TestReadingContentsInUTF8WithoutSignature(c *C) {
 
 func (s *MySuite) TestReadingContentsInUTF8WithSignature(c *C) {
 	filePath, _ := filepath.Abs(filepath.Join("_testdata", "utf8WithSig.csv"))
-	bytes, _ := ioutil.ReadFile(filePath)
+	bytes, _ := os.ReadFile(filePath)
 	contents, err := ReadFileContents(filePath)
 
 	c.Assert(err, Equals, nil)

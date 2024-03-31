@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -261,7 +260,7 @@ func GetPluginsInstallDir(pluginName string) (string, error) {
 
 // SubDirectoryExists checks if a dir for given plugin exists in the plugin directory
 func SubDirectoryExists(pluginDir string, pluginName string) bool {
-	files, err := ioutil.ReadDir(pluginDir)
+	files, err := os.ReadDir(pluginDir)
 	if err != nil {
 		return false
 	}
@@ -343,7 +342,7 @@ func ReadFileContents(file string) (string, error) {
 	if !FileExists(file) {
 		return "", fmt.Errorf("File %s doesn't exist.", file)
 	}
-	bytes, err := ioutil.ReadFile(file)
+	bytes, err := os.ReadFile(file)
 	if err != nil {
 		return "", fmt.Errorf("Failed to read the file %s.", file)
 	}
@@ -462,12 +461,12 @@ func CopyFile(src, dest string) error {
 		return fmt.Errorf("%s doesn't exist", src)
 	}
 
-	b, err := ioutil.ReadFile(src)
+	b, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(dest, b, NewFilePermissions)
+	err = os.WriteFile(dest, b, NewFilePermissions)
 	if err != nil {
 		return err
 	}
@@ -647,7 +646,7 @@ func SaveFile(filePath, contents string, takeBackup bool) error {
 			return fmt.Errorf("Failed to make backup for '%s': %s", filePath, err.Error())
 		}
 	}
-	err := ioutil.WriteFile(filePath, []byte(contents), NewFilePermissions)
+	err := os.WriteFile(filePath, []byte(contents), NewFilePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write to '%s': %s", filePath, err.Error())
 	}
@@ -694,7 +693,7 @@ func UrlExists(url string) (bool, error) {
 
 // GetPluginProperties returns the properties of the given plugin.
 func GetPluginProperties(jsonPropertiesFile string) (map[string]interface{}, error) {
-	pluginPropertiesJSON, err := ioutil.ReadFile(jsonPropertiesFile)
+	pluginPropertiesJSON, err := os.ReadFile(jsonPropertiesFile)
 	if err != nil {
 		return nil, fmt.Errorf("Could not read %s: %s\n", filepath.Base(jsonPropertiesFile), err)
 	}
